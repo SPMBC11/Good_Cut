@@ -1,28 +1,24 @@
 // src/components/admin/ManageServices.tsx
 import React, { useState } from "react";
-import { 
-  Scissors, 
-  DollarSign, 
-  Clock, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  Scissors,
+  DollarSign,
+  Clock,
+  Plus,
+  Edit,
+  Trash2,
   Search,
-  Image,
   Save,
-  X
+  X,
 } from "lucide-react";
-import { services } from "../../data/mockData";
-import { useBarbers } from "../../context/BarberContext";
+import { services as mockServices } from "../../data/mockData";
 import type { Service } from "../../types";
 
 const ManageServices: React.FC = () => {
-  const [serviceList, setServiceList] = useState<Service[]>(services);
+  const [serviceList, setServiceList] = useState<Service[]>(mockServices);
   const [searchTerm, setSearchTerm] = useState("");
-  const { services, addService, updateService, deleteService } = useBarbers();
   const [showForm, setShowForm] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
-  const [editingService, setEditingService] = useState<Service | null>(null); // El servicio que se está editando
   const [formData, setFormData] = useState<Omit<Service, "id">>({
     name: "",
     description: "",
@@ -32,8 +28,7 @@ const ManageServices: React.FC = () => {
   });
 
   // Filtrar servicios
-  const filteredServices = serviceList.filter(service =>
-  const filteredServices = services.filter(service =>
+  const filteredServices = serviceList.filter((service) =>
     service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     service.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -62,8 +57,9 @@ const ManageServices: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleSaveService = () => {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: name === 'price' || name === 'duration' ? Number(value) : value }));
   };
@@ -72,22 +68,20 @@ const ManageServices: React.FC = () => {
     e.preventDefault(); // Evita que el formulario recargue la página
     if (editingService) {
       // Actualizar servicio existente
-      setServiceList(prev => 
-        prev.map(service => 
-          service.id === editingService.id 
+      setServiceList((prev) =>
+        prev.map((service) =>
+          service.id === editingService.id
             ? { ...editingService, ...formData }
             : service
         )
       );
-      updateService({ ...editingService, ...formData });
     } else {
       // Crear nuevo servicio
       const newService: Service = {
         id: Date.now().toString(),
         ...formData,
       };
-      setServiceList(prev => [...prev, newService]);
-      addService(newService);
+      setServiceList((prev) => [...prev, newService]);
     }
     
     setShowForm(false);
@@ -97,7 +91,6 @@ const ManageServices: React.FC = () => {
   const handleDeleteService = (serviceId: string) => {
     if (window.confirm("¿Estás seguro de que quieres eliminar este servicio?")) {
       setServiceList(prev => prev.filter(service => service.id !== serviceId));
-      deleteService(serviceId);
     }
   };
 
@@ -106,10 +99,12 @@ const ManageServices: React.FC = () => {
     setEditingService(null);
   };
 
-  const totalRevenue = serviceList.reduce((sum, service) => sum + service.price, 0);
-  const averagePrice = serviceList.length > 0 ? totalRevenue / serviceList.length : 0;
-  const totalRevenue = services.reduce((sum, service) => sum + service.price, 0);
-  const averagePrice = services.length > 0 ? totalRevenue / services.length : 0;
+  const totalRevenue = serviceList.reduce(
+    (sum, service) => sum + service.price,
+    0
+  );
+  const averagePrice =
+    serviceList.length > 0 ? totalRevenue / serviceList.length : 0;
 
   return (
     <div className="space-y-6">
@@ -138,7 +133,6 @@ const ManageServices: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Total Servicios</p>
               <p className="text-xl font-bold text-dark">{serviceList.length}</p>
-              <p className="text-xl font-bold text-dark">{services.length}</p>
             </div>
           </div>
         </div>
@@ -163,12 +157,14 @@ const ManageServices: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Duración Promedio</p>
               <p className="text-xl font-bold text-dark">
-                {serviceList.length > 0 
-                  ? (serviceList.reduce((sum, service) => sum + service.duration, 0) / serviceList.length).toFixed(0)
-                {services.length > 0 
-                  ? (services.reduce((sum, service) => sum + service.duration, 0) / services.length).toFixed(0)
-                  : "0"
-                } min
+                {serviceList.length > 0
+                  ? (
+                      serviceList.reduce(
+                        (sum, service) => sum + service.duration,
+                        0
+                      ) / serviceList.length
+                    ).toFixed(0)
+                  : "0"} min
               </p>
             </div>
           </div>
@@ -271,7 +267,6 @@ const ManageServices: React.FC = () => {
             </div>
             <div className="p-4">
               {showForm ? (
-                <div className="space-y-4">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {/* Preview de la imagen */}
                   {formData.image && (
@@ -295,7 +290,6 @@ const ManageServices: React.FC = () => {
                       placeholder="Ej: Corte Clásico"
                       name="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
                     />
@@ -308,7 +302,6 @@ const ManageServices: React.FC = () => {
                       placeholder="Describe el servicio..."
                       name="description"
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       onChange={handleInputChange}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent resize-none"
@@ -323,7 +316,6 @@ const ManageServices: React.FC = () => {
                       placeholder="0"
                       name="price"
                       value={formData.price}
-                      onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
                     />
@@ -337,7 +329,6 @@ const ManageServices: React.FC = () => {
                       placeholder="0"
                       name="duration"
                       value={formData.duration}
-                      onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
                     />
@@ -351,7 +342,6 @@ const ManageServices: React.FC = () => {
                       placeholder="https://ejemplo.com/imagen.jpg"
                       name="image"
                       value={formData.image}
-                      onChange={(e) => setFormData({ ...formData, image: e.target.value })}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
                     />
@@ -361,14 +351,13 @@ const ManageServices: React.FC = () => {
                   <div className="flex gap-3 pt-4">
                     <button
                       onClick={handleCancel}
-                      type="button" // Evita que este botón envíe el formulario
+                      type="button"
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <X size={16} />
                       Cancelar
                     </button>
                     <button
-                      onClick={handleSaveService}
                       type="submit"
                       className="flex-1 flex items-center justify-center gap-2 bg-golden hover:bg-golden-dark text-dark font-semibold px-4 py-2 rounded-lg transition-colors"
                     >
@@ -376,7 +365,6 @@ const ManageServices: React.FC = () => {
                       {editingService ? "Actualizar" : "Crear"}
                     </button>
                   </div>
-                </div>
                 </form>
               ) : (
                 <div className="text-center py-8">
