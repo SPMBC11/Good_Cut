@@ -15,7 +15,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [booking, setBooking] = useState<Partial<Booking>>({});
-  const { addBooking, barbers } = useBarbers();
+  const { addBooking, barbers, bookings } = useBarbers();
 
   // Preseleccionar barbero si viene desde card de barbero
   useEffect(() => {
@@ -102,6 +102,21 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
     setStep(1);
     setBooking({});
   };
+
+  // Calcular disponibilidad dinámica de horarios según reservas existentes
+  const computedTimeSlots = timeSlots.map((slot) => {
+    const selectedBarberId = booking.barberId || selectedBarber?.id;
+    const isTaken = !!bookings.find(
+      (b) =>
+        b.barberId === selectedBarberId &&
+        b.date === booking.date &&
+        b.time === slot.time
+    );
+    return {
+      ...slot,
+      available: Boolean(booking.date) && slot.available && !isTaken,
+    };
+  });
 
   return (
     <div style={{
@@ -286,7 +301,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
                 gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
                 gap: '8px'
               }}>
-                {timeSlots.map((t) => (
+                {computedTimeSlots.map((t) => (
                   <button
                     key={t.time}
                     onClick={() => t.available && setBooking((prev) => ({ ...prev, time: t.time }))}
