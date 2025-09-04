@@ -1,5 +1,5 @@
 // src/context/BarberContext.tsx
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { Barber, Booking } from "../types";
 
 interface BarberContextProps {
@@ -48,7 +48,8 @@ export const BarberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       phone: "+1 234 567 8903"
     }
   ]);
-  const [bookings, setBookings] = useState<Booking[]>([
+  // Estado inicial de reservas con soporte de persistencia en localStorage
+  const defaultBookings: Booking[] = [
     {
       id: "1",
       barberId: "1",
@@ -79,7 +80,23 @@ export const BarberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       customerPhone: "+1 234 567 8902", 
       customerEmail: "carlos@email.com"
     }
-  ]);
+  ];
+
+  const [bookings, setBookings] = useState<Booking[]>(() => {
+    try {
+      const saved = localStorage.getItem("bookings");
+      return saved ? JSON.parse(saved) as Booking[] : defaultBookings;
+    } catch {
+      return defaultBookings;
+    }
+  });
+
+  // Persistir reservas en localStorage cuando cambien
+  useEffect(() => {
+    try {
+      localStorage.setItem("bookings", JSON.stringify(bookings));
+    } catch {}
+  }, [bookings]);
 
   const addBarber = (barber: Barber) => {
     setBarbers((prev) => [...prev, barber]);
