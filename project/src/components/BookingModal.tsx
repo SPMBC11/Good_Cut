@@ -4,7 +4,6 @@ import { services, timeSlots } from '../data/mockData';
 import { Booking } from '../types';
 import type { Barber } from '../types';
 import { useBarbers } from '../context/BarberContext';
-import { X } from 'lucide-react';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -16,36 +15,17 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [booking, setBooking] = useState<Partial<Booking>>({});
-  const { addBooking, barbers } = useBarbers();
+  const { addBooking, barbers, bookings } = useBarbers();
 
-  // Pre-select barber if coming from barber card
   useEffect(() => {
     if (selectedBarber) {
       setBooking(prev => ({ ...prev, barberId: selectedBarber.id }));
     }
   }, [selectedBarber]);
 
-  if (!isOpen) {
-    return null;
-  }
-
-  const handleNext = () => {
-    if (step < 4) setStep(step + 1);
-  };
-
-  const handlePrev = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
   const handleSubmit = async () => {
     setIsLoading(true);
-
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 2000));
-
-    const selectedBarberData = barbers.find(b => b.id === booking.barberId);
-    const selectedService = services.find(s => s.id === booking.serviceId);
-
     const newBooking: Booking = {
       id: Date.now().toString(),
       barberId: booking.barberId!,
@@ -57,113 +37,151 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
       customerEmail: booking.customerEmail!,
     };
     addBooking(newBooking);
-
-    const dateOptions: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    };
-    const formattedDate = new Date(booking.date as string).toLocaleDateString('es-ES', dateOptions);
-
-    const barberName = selectedBarberData?.name ?? '';
-    const serviceName = selectedService?.name ?? '';
-    const servicePrice = selectedService?.price ?? '';
-
-    const whatsappMessage = [
-      '¡Hola! Quiero reservar una cita en Good Cut:',
-      '',
-      `📅 *Fecha:* ${formattedDate}`,
-      `🕐 *Hora:* ${booking.time}`,
-      `👨‍💼 *Barbero:* ${barberName}`,
-      `✂️ *Servicio:* ${serviceName} - ${servicePrice}`,
-      `👤 *Cliente:* ${booking.customerName}`,
-      `📞 *Teléfono:* ${booking.customerPhone}`,
-      `📧 *Email:* ${booking.customerEmail}`,
-      '',
-      '¡Gracias!'
-    ].join('\n');
-
-    const whatsappNumber = "573053113534"; // Replace with your real number
-    const encodedMessage = encodeURIComponent(whatsappMessage);
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-
     setIsLoading(false);
-
-    const confirmed = window.confirm(
-      '¡Reserva confirmada! ¿Deseas enviar los detalles por WhatsApp?'
-    );
-
-    if (confirmed) {
-      window.open(whatsappUrl, '_blank');
-    }
-
     onClose();
     setStep(1);
     setBooking({});
   };
 
-  const isNextDisabled =
-    (step === 1 && !booking.barberId) ||
-    (step === 2 && !booking.serviceId) ||
-    (step === 3 && (!booking.date || !booking.time));
-
-  const isSubmitDisabled = !booking.customerName || !booking.customerPhone || !booking.customerEmail || isLoading;
+  // Bloqueo por barbero-fecha-hora
+  const computedTimeSlots = timeSlots.map((slot) => {
+    const selectedBarberId = booking.barberId || selectedBarber?.id;
+    const isTaken = !!bookings.find(
+      (b) =>
+        b.barberId === selectedBarberId &&
+        b.date === booking.date &&
+        b.time === slot.time
+    );
+    return {
+      ...slot,
+      available: Boolean(booking.date) && slot.available && !isTaken,
+    };
+  });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col min-h-[400px]">
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 50,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '16px'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '16px',
+        maxWidth: '600px',
+        width: '100%',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        minHeight: '400px'
+      }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-900">Reserva tu cita - PASO {step}</h3>
-          <button
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '24px',
+          borderBottom: '1px solid #e5e7eb'
+        }}>
+          <h3 style={{
+            fontSize: '20px',
+            fontWeight: '600',
+            color: '#111827',
+            margin: 0
+          }}>Reserva tu cita - PASO {step}</h3>
+          <button 
             onClick={onClose}
-            className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            style={{
+              padding: '8px',
+              backgroundColor: '#f3f4f6',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }}
           >
-            <X size={20} className="text-gray-600" />
+            ✕
           </button>
         </div>
 
         {/* Steps progress */}
-        <div className="p-4 sm:p-6">
-          <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-            <span className={`font-medium ${step >= 1 ? 'text-gray-900' : ''}`}>Barbero</span>
-            <span className={`font-medium ${step >= 2 ? 'text-gray-900' : ''}`}>Servicio</span>
-            <span className={`font-medium ${step >= 3 ? 'text-gray-900' : ''}`}>Fecha y Hora</span>
-            <span className={`font-medium ${step >= 4 ? 'text-gray-900' : ''}`}>Datos</span>
+        <div style={{ padding: '16px 24px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '14px',
+            color: '#6b7280',
+            marginBottom: '8px'
+          }}>
+            <span style={{ fontWeight: step >= 1 ? '600' : '400', color: step >= 1 ? '#111827' : '#6b7280' }}>Barbero</span>
+            <span style={{ fontWeight: step >= 2 ? '600' : '400', color: step >= 2 ? '#111827' : '#6b7280' }}>Servicio</span>
+            <span style={{ fontWeight: step >= 3 ? '600' : '400', color: step >= 3 ? '#111827' : '#6b7280' }}>Fecha y Hora</span>
+            <span style={{ fontWeight: step >= 4 ? '600' : '400', color: step >= 4 ? '#111827' : '#6b7280' }}>Datos</span>
           </div>
-          <div className="bg-gray-200 rounded-full h-1.5">
-            <div
-              className="bg-golden rounded-full h-1.5"
-              style={{ width: `${((step - 1) / 3) * 100}%`, transition: 'width 0.3s ease' }}
-            />
+          <div style={{
+            height: '4px',
+            backgroundColor: '#e5e7eb',
+            borderRadius: '2px'
+          }}>
+            <div style={{
+              height: '4px',
+              backgroundColor: '#d97706',
+              borderRadius: '2px',
+              width: `${(step - 1) * 33.33 + 1}%`,
+              transition: 'width 0.3s ease'
+            }} />
           </div>
         </div>
 
         {/* Body */}
-        <div className="p-4 sm:p-6 flex-grow">
+        <div style={{ padding: '24px' }}>
           {step === 1 && (
             <div>
-              <h4 className="font-medium text-gray-800 mb-4">Selecciona un barbero</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <h4 style={{ fontWeight: '500', marginBottom: '16px', color: '#111827' }}>Selecciona un barbero</h4>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '16px'
+              }}>
                 {barbers.map((b) => (
                   <button
                     key={b.id}
                     onClick={() => setBooking((prev) => ({ ...prev, barberId: b.id }))}
-                    className={`flex items-center gap-3 p-3 border rounded-xl text-left w-full transition-all ${
-                      booking.barberId === b.id
-                        ? 'border-golden ring-2 ring-golden ring-opacity-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px',
+                      border: booking.barberId === b.id ? '2px solid #d97706' : '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      boxShadow: booking.barberId === b.id ? '0 0 0 3px rgba(217, 119, 6, 0.1)' : 'none'
+                    }}
                   >
-                    <img
-                      src={b.image}
-                      alt={b.name}
-                      className="w-12 h-12 rounded-full object-cover"
+                    <img 
+                      src={b.image} 
+                      alt={b.name} 
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        objectFit: 'cover'
+                      }} 
                     />
                     <div>
-                      <p className="font-semibold text-gray-900">{b.name}</p>
-                      <p className="text-sm text-gray-600">{b.specialty}</p>
+                      <p style={{ fontWeight: '600', margin: 0, color: '#111827' }}>{b.name}</p>
+                      <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>{b.specialty}</p>
                     </div>
                   </button>
                 ))}
@@ -173,20 +191,29 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
 
           {step === 2 && (
             <div>
-              <h4 className="font-medium text-gray-800 mb-4">Selecciona un servicio</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <h4 style={{ fontWeight: '500', marginBottom: '16px', color: '#111827' }}>Selecciona un servicio</h4>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px'
+              }}>
                 {services.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => setBooking((prev) => ({ ...prev, serviceId: s.id }))}
-                    className={`p-3 border rounded-xl text-left w-full transition-all ${
-                      booking.serviceId === s.id
-                        ? 'border-golden ring-2 ring-golden ring-opacity-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    style={{
+                      padding: '12px',
+                      border: booking.serviceId === s.id ? '2px solid #d97706' : '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      backgroundColor: 'white',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      width: '100%',
+                      boxShadow: booking.serviceId === s.id ? '0 0 0 3px rgba(217, 119, 6, 0.1)' : 'none'
+                    }}
                   >
-                    <p className="font-semibold text-gray-900">{s.name}</p>
-                    <p className="text-sm text-gray-600">${s.price} · {s.duration} min</p>
+                    <p style={{ fontWeight: '600', margin: '0 0 4px 0', color: '#111827' }}>{s.name}</p>
+                    <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>${s.price} · {s.duration} min</p>
                   </button>
                 ))}
               </div>
@@ -195,28 +222,39 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
 
           {step === 3 && (
             <div>
-              <h4 className="font-medium text-gray-800 mb-4">Selecciona fecha y hora</h4>
+              <h4 style={{ fontWeight: '500', marginBottom: '16px', color: '#111827' }}>Selecciona fecha y hora</h4>
               <input
                 type="date"
-                className="w-full p-3 border border-gray-300 rounded-lg mb-4 text-base"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  fontSize: '16px'
+                }}
                 value={booking.date || ''}
                 onChange={(e) => setBooking((prev) => ({ ...prev, date: e.target.value }))}
               />
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                {timeSlots.map((t) => (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
+                gap: '8px'
+              }}>
+                {computedTimeSlots.map((t) => (
                   <button
                     key={t.time}
                     onClick={() => t.available && setBooking((prev) => ({ ...prev, time: t.time }))}
                     disabled={!t.available}
-                    className={`p-2 rounded-lg border text-sm transition-colors ${
-                      booking.time === t.time
-                        ? 'bg-golden-light border-golden font-semibold'
-                        : 'border-gray-300 bg-white'
-                    } ${
-                      t.available
-                        ? 'cursor-pointer hover:bg-gray-100'
-                        : 'cursor-not-allowed opacity-50'
-                    }`}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: booking.time === t.time ? '2px solid #d97706' : '1px solid #d1d5db',
+                      backgroundColor: booking.time === t.time ? '#fef3c7' : 'white',
+                      cursor: t.available ? 'pointer' : 'not-allowed',
+                      fontSize: '14px',
+                      opacity: t.available ? 1 : 0.5
+                    }}
                   >
                     {t.time}
                   </button>
@@ -227,26 +265,44 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
 
           {step === 4 && (
             <div>
-              <h4 className="font-medium text-gray-800 mb-4">Tus datos</h4>
-              <div className="flex flex-col gap-4">
+              <h4 style={{ fontWeight: '500', marginBottom: '16px', color: '#111827' }}>Tus datos</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <input
                   type="text"
                   placeholder="Nombre completo"
-                  className="w-full p-3 border border-gray-300 rounded-lg text-base"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '16px'
+                  }}
                   value={booking.customerName || ''}
                   onChange={(e) => setBooking((prev) => ({ ...prev, customerName: e.target.value }))}
                 />
                 <input
                   type="tel"
                   placeholder="Teléfono"
-                  className="w-full p-3 border border-gray-300 rounded-lg text-base"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '16px'
+                  }}
                   value={booking.customerPhone || ''}
                   onChange={(e) => setBooking((prev) => ({ ...prev, customerPhone: e.target.value }))}
                 />
                 <input
                   type="email"
                   placeholder="Correo electrónico"
-                  className="w-full p-3 border border-gray-300 rounded-lg text-base"
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '8px',
+                    fontSize: '16px'
+                  }}
                   value={booking.customerEmail || ''}
                   onChange={(e) => setBooking((prev) => ({ ...prev, customerEmail: e.target.value }))}
                 />
@@ -255,41 +311,95 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
           )}
         </div>
 
-        {/* Buttons */}
-        <div className="flex justify-between p-6 border-t border-gray-200 bg-gray-50">
-          {step > 1 ? (
+        {/* Botones */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          padding: '24px',
+          borderTop: '1px solid #e5e7eb',
+          backgroundColor: '#f9fafb'
+        }}>
+          {step > 1 && (
             <button
               onClick={handlePrev}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg bg-white hover:bg-gray-50 transition-colors text-base"
+              style={{
+                padding: '12px 24px',
+                border: '1px solid #d1d5db',
+                color: '#374151',
+                borderRadius: '8px',
+                backgroundColor: 'white',
+                cursor: 'pointer',
+                fontSize: '16px'
+              }}
             >
               Anterior
             </button>
-          ) : <div />}
-
-          {step < 4 ? (
-            <button
-              onClick={handleNext}
-              disabled={isNextDisabled}
-              className="px-6 py-3 bg-golden text-dark font-semibold rounded-lg border-none transition-opacity text-base disabled:opacity-50"
-            >
-              Siguiente
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitDisabled}
-              className="px-6 py-3 bg-golden text-dark font-semibold rounded-lg border-none flex items-center gap-2 transition-opacity text-base disabled:opacity-50"
-            >
-              {isLoading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-dark border-t-transparent rounded-full animate-spin" />
-                  <span>Confirmando...</span>
-                </>
-              ) : (
-                'Confirmar Reserva'
-              )}
-            </button>
           )}
+          
+          <div style={{ marginLeft: 'auto' }}>
+            {step < 4 ? (
+              <button
+                onClick={handleNext}
+                disabled={
+                  (step === 1 && !booking.barberId) ||
+                  (step === 2 && !booking.serviceId) ||
+                  (step === 3 && (!booking.date || !booking.time))
+                }
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#d97706',
+                  color: 'white',
+                  fontWeight: '500',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  opacity: (
+                    (step === 1 && !booking.barberId) ||
+                    (step === 2 && !booking.serviceId) ||
+                    (step === 3 && (!booking.date || !booking.time))
+                  ) ? 0.5 : 1
+                }}
+              >
+                Siguiente
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={!booking.customerName || !booking.customerPhone || !booking.customerEmail || isLoading}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#d97706',
+                  color: 'white',
+                  fontWeight: '500',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  opacity: (!booking.customerName || !booking.customerPhone || !booking.customerEmail || isLoading) ? 0.5 : 1
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <div style={{
+                      width: '16px',
+                      height: '16px',
+                      border: '2px solid white',
+                      borderTop: '2px solid transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    <span>Confirmando...</span>
+                  </>
+                ) : (
+                  'Confirmar Reserva'
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
