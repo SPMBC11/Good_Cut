@@ -321,7 +321,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
         }}>
           {step > 1 && (
             <button
-              onClick={handlePrev}
+             // Anterior
+            onClick={() => setStep((s) => Math.max(1, s - 1))}
               style={{
                 padding: '12px 24px',
                 border: '1px solid #d1d5db',
@@ -339,7 +340,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
           <div style={{ marginLeft: 'auto' }}>
             {step < 4 ? (
               <button
-                onClick={handleNext}
+                // Siguiente
+              onClick={() => setStep((s) => Math.min(4, s + 1))}
                 disabled={
                   (step === 1 && !booking.barberId) ||
                   (step === 2 && !booking.serviceId) ||
