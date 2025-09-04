@@ -65,9 +65,8 @@ const ManageServices: React.FC = () => {
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Evita que el formulario recargue la página
+    e.preventDefault();
     if (editingService) {
-      // Actualizar servicio existente
       setServiceList((prev) =>
         prev.map((service) =>
           service.id === editingService.id
@@ -76,14 +75,12 @@ const ManageServices: React.FC = () => {
         )
       );
     } else {
-      // Crear nuevo servicio
       const newService: Service = {
         id: Date.now().toString(),
         ...formData,
       };
       setServiceList((prev) => [...prev, newService]);
     }
-    
     setShowForm(false);
     setEditingService(null);
   };
@@ -99,12 +96,8 @@ const ManageServices: React.FC = () => {
     setEditingService(null);
   };
 
-  const totalRevenue = serviceList.reduce(
-    (sum, service) => sum + service.price,
-    0
-  );
-  const averagePrice =
-    serviceList.length > 0 ? totalRevenue / serviceList.length : 0;
+  const totalRevenue = serviceList.reduce((sum, service) => sum + service.price, 0);
+  const averagePrice = serviceList.length > 0 ? totalRevenue / serviceList.length : 0;
 
   return (
     <div className="space-y-6">
