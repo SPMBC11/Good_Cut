@@ -58,22 +58,31 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
     };
     addBooking(newBooking);
 
-    const whatsappMessage = `¡Hola! Quiero reservar una cita en Good Cut:
-
-📅 *Fecha:* ${new Date(booking.date!).toLocaleDateString('es-ES', {
+    const dateOptions: Intl.DateTimeFormatOptions = {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
-    })}
-🕐 *Hora:* ${booking.time}
-👨‍💼 *Barbero:* ${selectedBarberData?.name}
-✂️ *Servicio:* ${selectedService?.name} - ${selectedService?.price}
-👤 *Cliente:* ${booking.customerName}
-📞 *Teléfono:* ${booking.customerPhone}
-📧 *Email:* ${booking.customerEmail}
+      day: 'numeric',
+    };
+    const formattedDate = new Date(booking.date as string).toLocaleDateString('es-ES', dateOptions);
 
-¡Gracias!`;
+    const barberName = selectedBarberData?.name ?? '';
+    const serviceName = selectedService?.name ?? '';
+    const servicePrice = selectedService?.price ?? '';
+
+    const whatsappMessage = [
+      '¡Hola! Quiero reservar una cita en Good Cut:',
+      '',
+      `📅 *Fecha:* ${formattedDate}`,
+      `🕐 *Hora:* ${booking.time}`,
+      `👨‍💼 *Barbero:* ${barberName}`,
+      `✂️ *Servicio:* ${serviceName} - ${servicePrice}`,
+      `👤 *Cliente:* ${booking.customerName}`,
+      `📞 *Teléfono:* ${booking.customerPhone}`,
+      `📧 *Email:* ${booking.customerEmail}`,
+      '',
+      '¡Gracias!'
+    ].join('\n');
 
     const whatsappNumber = "573053113534"; // Replace with your real number
     const encodedMessage = encodeURIComponent(whatsappMessage);
