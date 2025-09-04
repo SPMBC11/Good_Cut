@@ -1,80 +1,82 @@
-import { Barber, Service, TimeSlot } from '../types';
-
-export const barbers: Barber[] = [
-  {
-    id: '1',
-    name: 'Miguel Rodríguez',
-    specialty: 'Cortes Clásicos & Fade',
-    experience: '8 años de experiencia',
-    image: 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg',
-    rating: 4.9,
-    phone: '+573053113534' // ✅ Teléfono con indicativo
-  },
-  {
-    id: '2',
-    name: 'Carlos Mendoza',
-    specialty: 'Barbas & Bigotes',
-    experience: '6 años de experiencia',
-    image: 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg',
-    rating: 4.8,
-    phone: '+573053113534'
-  },
-  {
-    id: '3',
-    name: 'Fernando López',
-    specialty: 'Cortes Modernos',
-    experience: '5 años de experiencia',
-    image: 'https://images.pexels.com/photos/1570807/pexels-photo-1570807.jpeg',
-    rating: 4.7,
-    phone: '+573053113534'
-  }
-];
+// src/data/mockData.ts
+import type { Service, TimeSlot } from "../types";
 
 export const services: Service[] = [
   {
-    id: '1',
-    name: 'Corte Clásico',
-    description: 'Corte tradicional con tijeras y navaja',
-    price: 25,
-    duration: 45,
-    image: 'https://images.pexels.com/photos/1570807/pexels-photo-1570807.jpeg'
-  },
-  {
-    id: '2',
-    name: 'Fade Premium',
-    description: 'Degradado profesional con acabado perfecto',
+    id: "1",
+    name: "Corte Clásico",
+    description: "Corte tradicional con acabado prolijo y estilizado.",
     price: 35,
-    duration: 60,
-    image: 'https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg'
+    duration: 40,
+    image:
+      "https://images.unsplash.com/photo-1621607512200-6f5b2b96cfa0?q=80&w=1280&auto=format&fit=crop",
   },
   {
-    id: '3',
-    name: 'Barba & Bigote',
-    description: 'Arreglo completo con navaja y aceites',
-    price: 20,
+    id: "2",
+    name: "Afeitado Tradicional",
+    description: "Afeitado con toallas calientes y navaja para un acabado suave.",
+    price: 25,
     duration: 30,
-    image: 'https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg'
+    image:
+      "https://images.unsplash.com/photo-1562259949-e8e7689d7828?q=80&w=1280&auto=format&fit=crop",
   },
   {
-    id: '4',
-    name: 'Paquete Completo',
-    description: 'Corte + Barba + Tratamiento capilar',
+    id: "3",
+    name: "Corte + Barba",
+    description: "Paquete completo de corte de cabello y arreglo de barba.",
     price: 50,
-    duration: 90,
-    image: 'https://images.pexels.com/photos/1570807/pexels-photo-1570807.jpeg'
-  }
+    duration: 60,
+    image:
+      "https://images.unsplash.com/photo-1517837016564-bfc3ffd67455?q=80&w=1280&auto=format&fit=crop",
+  },
+  {
+    id: "4",
+    name: "Arreglo de Barba",
+    description: "Perfilado y arreglo de barba con productos premium.",
+    price: 20,
+    duration: 25,
+    image:
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=1280&auto=format&fit=crop",
+  },
+  {
+    id: "5",
+    name: "Corte Fade",
+    description: "Corte degradado de precisión con estilo moderno.",
+    price: 40,
+    duration: 45,
+    image:
+      "https://images.unsplash.com/photo-1605497788044-5f7f1c6d7a0e?q=80&w=1280&auto=format&fit=crop",
+  },
+  {
+    id: "6",
+    name: "Color y Estilizado",
+    description: "Coloración ligera y peinado para ocasiones especiales.",
+    price: 60,
+    duration: 70,
+    image:
+      "https://images.unsplash.com/photo-1503951914958-c4c4b8c3b34d?q=80&w=1280&auto=format&fit=crop",
+  },
 ];
 
 export const timeSlots: TimeSlot[] = [
-  { time: '09:00', available: true },
-  { time: '10:00', available: true },
-  { time: '11:00', available: false },
-  { time: '12:00', available: true },
-  { time: '13:00', available: true },
-  { time: '14:00', available: false },
-  { time: '15:00', available: true },
-  { time: '16:00', available: true },
-  { time: '17:00', available: true },
-  { time: '18:00', available: false },
-  { time: '19:00', available: true }
+  { time: "09:00", available: true },
+  { time: "09:30", available: true },
+  { time: "10:00", available: false },
+  { time: "10:30", available: true },
+  { time: "11:00", available: true },
+  { time: "11:30", available: true },
+  { time: "12:00", available: false },
+  { time: "12:30", available: true },
+  { time: "13:00", available: true },
+  { time: "13:30", available: true },
+  { time: "14:00", available: true },
+  { time: "14:30", available: false },
+  { time: "15:00", available: true },
+  { time: "15:30", available: true },
+  { time: "16:00", available: true },
+  { time: "16:30", available: true },
+  { time: "17:00", available: false },
+  { time: "17:30", available: true },
+  { time: "18:00", available: true },
 ];
+
