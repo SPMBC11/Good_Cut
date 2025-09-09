@@ -2,6 +2,10 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Barber, Booking } from "../types";
 
+/**
+ * @interface BarberContextProps
+ * Define la forma de los datos y funciones que se proveerán en el contexto.
+ */
 interface BarberContextProps {
   barbers: Barber[];
   bookings: Booking[];
@@ -10,94 +14,55 @@ interface BarberContextProps {
   updateBarber: (barber: Barber) => void;
   deleteBarber: (id: string) => void;
   addBooking: (booking: Booking) => void;
+  updateBookingStatus: (id: string, status: 'pending' | 'completed' | 'cancelled') => void;
   deleteBooking: (id: string) => void;
   addNotification: (message: string) => void;
   clearNotifications: () => void;
 }
 
+// Creación del contexto de React
 const BarberContext = createContext<BarberContextProps | undefined>(undefined);
 
+/**
+ * @component BarberProvider
+ * 
+ * Proveedor de contexto que encapsula la lógica de estado para barberos, reservas y notificaciones.
+ * Utiliza `localStorage` para persistir los datos.
+ */
 export const BarberProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Estado para las notificaciones
   const [notifications, setNotifications] = useState<string[]>([]);
-  const [barbers, setBarbers] = useState<Barber[]>([
-    {
-      id: "1",
-      name: "Carlos Mendoza",
-      specialty: "Corte Clásico",
-      experience: "8 años",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-      rating: 4.8,
-      phone: "+1 234 567 8901"
-    },
-    {
-      id: "2", 
-      name: "Miguel Torres",
-      specialty: "Barba y Bigote",
-      experience: "5 años",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
-      rating: 4.9,
-      phone: "+1 234 567 8902"
-    },
-    {
-      id: "3",
-      name: "Roberto Silva",
-      specialty: "Afeitado Tradicional", 
-      experience: "12 años",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face",
-      rating: 4.7,
-      phone: "+1 234 567 8903"
-    }
-  ]);
-  // Estado inicial de reservas con soporte de persistencia en localStorage
-  const defaultBookings: Booking[] = [
-    {
-      id: "1",
-      barberId: "1",
-      serviceId: "1",
-      date: new Date().toISOString().split('T')[0],
-      time: "10:00",
-      customerName: "Juan Pérez",
-      customerPhone: "+1 234 567 8900",
-      customerEmail: "juan@email.com"
-    },
-    {
-      id: "2",
-      barberId: "2", 
-      serviceId: "2",
-      date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
-      time: "14:30",
-      customerName: "María García",
-      customerPhone: "+1 234 567 8901",
-      customerEmail: "maria@email.com"
-    },
-    {
-      id: "3",
-      barberId: "1",
-      serviceId: "3",
-      date: new Date(Date.now() + 172800000).toISOString().split('T')[0],
-      time: "16:00",
-      customerName: "Carlos López",
-      customerPhone: "+1 234 567 8902", 
-      customerEmail: "carlos@email.com"
-    }
-  ];
 
-  const [bookings, setBookings] = useState<Booking[]>(() => {
+  // --- Estado de Barberos ---
+  const [barbers, setBarbers] = useState<Barber[]>(() => {
     try {
-      const saved = localStorage.getItem("bookings");
-      return saved ? JSON.parse(saved) as Booking[] : defaultBookings;
+      const saved = localStorage.getItem("barbers");
+      return saved ? JSON.parse(saved) : []; // Inicia con datos de localStorage o vacío
     } catch {
-      return defaultBookings;
+      return [];
     }
   });
 
-  // Persistir reservas en localStorage cuando cambien
-  useEffect(() => {
+  // --- Estado de Reservas ---
+  const [bookings, setBookings] = useState<Booking[]>(() => {
     try {
-      localStorage.setItem("bookings", JSON.stringify(bookings));
-    } catch {}
+      const saved = localStorage.getItem("bookings");
+      return saved ? JSON.parse(saved) : []; // Inicia con datos de localStorage o vacío
+    } catch {
+      return [];
+    }
+  });
+
+  // --- Persistencia en localStorage ---
+  useEffect(() => {
+    localStorage.setItem("barbers", JSON.stringify(barbers));
+  }, [barbers]);
+
+  useEffect(() => {
+    localStorage.setItem("bookings", JSON.stringify(bookings));
   }, [bookings]);
 
+  // --- Funciones CRUD para Barberos ---
   const addBarber = (barber: Barber) => {
     setBarbers((prev) => [...prev, barber]);
     addNotification(`Nuevo barbero agregado: ${barber.name}`);
@@ -111,27 +76,42 @@ export const BarberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const deleteBarber = (id: string) => {
     const barber = barbers.find(b => b.id === id);
     setBarbers((prev) => prev.filter((b) => b.id !== id));
-    if (barber) {
-      addNotification(`Barbero eliminado: ${barber.name}`);
-    }
+    if (barber) addNotification(`Barbero eliminado: ${barber.name}`);
   };
 
+  // --- Funciones para Reservas ---
   const addBooking = (booking: Booking) => {
     setBookings((prev) => [...prev, booking]);
-    addNotification(`Nueva reserva creada para ${booking.customerName}`);
+    addNotification(booking.isWalkIn ? `Corte sin reserva registrado para ${booking.customerName}` : `Nueva reserva para ${booking.customerName}`);
   };
+
+  const updateBookingStatus = (id: string, status: 'pending' | 'completed' | 'cancelled') => {
+  setBookings((prev) => {
+    const updated = prev.map((b) =>
+      b.id === id ? { ...b, status } : b
+    );
+    const booking = prev.find((b) => b.id === id);
+    if (booking) {
+      addNotification(`Reserva de ${booking.customerName} marcada como ${status}`);
+    }
+    return updated;
+  });
+};
   
-  const deleteBooking = (id: string) => {
-    const booking = bookings.find(b => b.id === id);
-    setBookings((prev) => prev.filter((b) => b.id !== id));
+const deleteBooking = (id: string) => {
+  setBookings((prev) => {
+    const booking = prev.find((b) => b.id === id);
     if (booking) {
       addNotification(`Reserva eliminada para ${booking.customerName}`);
     }
-  };
+    return prev.filter((b) => b.id !== id);
+  });
+};
 
+  // --- Funciones para Notificaciones ---
   const addNotification = (message: string) => {
     setNotifications((prev) => [...prev, message]);
-    // Auto-remove notification after 5 seconds
+    // La notificación se elimina automáticamente después de 5 segundos
     setTimeout(() => {
       setNotifications((prev) => prev.slice(1));
     }, 5000);
@@ -148,6 +128,7 @@ export const BarberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       updateBarber, 
       deleteBarber, 
       addBooking, 
+      updateBookingStatus,
       deleteBooking,
       addNotification,
       clearNotifications
@@ -157,6 +138,12 @@ export const BarberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 };
 
+/**
+ * @hook useBarbers
+ * 
+ * Hook personalizado para acceder fácilmente al BarberContext.
+ * Lanza un error si se usa fuera de un BarberProvider.
+ */
 export const useBarbers = () => {
   const context = useContext(BarberContext);
   if (!context) throw new Error("useBarbers debe usarse dentro de BarberProvider");

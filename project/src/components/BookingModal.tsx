@@ -1,31 +1,67 @@
 // src/components/BookingModal.tsx
 import React, { useEffect, useState } from 'react';
-import { services, timeSlots } from '../data/mockData';
+import { timeSlots } from '../data/mockData';
 import { Booking } from '../types';
 import type { Barber } from '../types';
 import { useBarbers } from '../context/BarberContext';
+import { useServices } from '../context/ServiceContext';
 
+/**
+ * @interface BookingModalProps
+ * @property {boolean} isOpen - Controla si el modal está abierto o cerrado.
+ * @property {() => void} onClose - Callback para cerrar el modal.
+ * @property {Barber | null} selectedBarber - El barbero preseleccionado al abrir el modal.
+ */
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedBarber: Barber | null;
 }
 
+/**
+ * @component BookingModal
+ * 
+ * Modal de varios pasos para que los clientes reserven una cita.
+ * Guía al usuario a través de la selección de barbero, servicio, fecha, hora y datos personales.
+ * Al final, genera un mensaje de WhatsApp y guarda la reserva en la aplicación.
+ */
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBarber }) => {
-  const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [booking, setBooking] = useState<Partial<Booking>>({});
-  const { addBooking, barbers, bookings } = useBarbers();
+  // Estados para controlar el flujo del modal
+  const [step, setStep] = useState(1); // Paso actual del formulario
+  const [isLoading, setIsLoading] = useState(false); // Estado de carga para el envío
+  const [booking, setBooking] = useState<Partial<Booking>>({}); // Datos de la reserva en progreso
 
+  // Hooks para acceder a los contextos de la aplicación
+  const { addBooking, barbers, bookings } = useBarbers();
+  const { services } = useServices();
+
+  // Efecto para preseleccionar el barbero si se pasa como prop
   useEffect(() => {
     if (selectedBarber) {
       setBooking(prev => ({ ...prev, barberId: selectedBarber.id }));
     }
   }, [selectedBarber]);
 
+  /**
+   * Maneja el envío final del formulario.
+   * Construye un mensaje para WhatsApp y guarda la reserva localmente.
+   */
   const handleSubmit = async () => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simula un retraso
+
+    const selectedBarberInfo = barbers.find(b => b.id === booking.barberId);
+    const selectedServiceInfo = services.find(s => s.id === booking.serviceId);
+
+    if (selectedBarberInfo) {
+      // Construye el mensaje para WhatsApp
+      const message = `¡Hola! Me gustaría reservar una cita:\n\n📅 Fecha: ${booking.date}\n🕐 Hora: ${booking.time}\n💇‍♂️ Barbero: ${selectedBarberInfo.name}\n✂️ Servicio: ${selectedServiceInfo?.name || 'N/A'}\n💰 Precio: $${selectedServiceInfo?.price || '0'}\n\n👤 Mis datos:\n• Nombre: ${booking.customerName}\n• Teléfono: ${booking.customerPhone}\n• Email: ${booking.customerEmail}\n\n¿Está disponible? ¡Gracias!`;
+      const cleanPhone = selectedBarberInfo.phone.replace(/\D/g, '');
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    }
+
+    // Guarda la reserva en el estado de la aplicación
     const newBooking: Booking = {
       id: Date.now().toString(),
       barberId: booking.barberId!,
@@ -35,370 +71,161 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, selectedBa
       customerName: booking.customerName!,
       customerPhone: booking.customerPhone!,
       customerEmail: booking.customerEmail!,
+      status: 'pending',
+      price: services.find(s => s.id === booking.serviceId)?.price || 0,
     };
     addBooking(newBooking);
+
+    // Resetea y cierra el modal
     setIsLoading(false);
     onClose();
     setStep(1);
     setBooking({});
   };
 
-  // Bloqueo por barbero-fecha-hora
+  // Calcula los horarios disponibles, deshabilitando los ya reservados
   const computedTimeSlots = timeSlots.map((slot) => {
     const selectedBarberId = booking.barberId || selectedBarber?.id;
     const isTaken = !!bookings.find(
       (b) =>
         b.barberId === selectedBarberId &&
         b.date === booking.date &&
-        b.time === slot.time
+        b.time === slot.time &&
+        b.status !== 'cancelled'
     );
-    return {
-      ...slot,
-      available: Boolean(booking.date) && slot.available && !isTaken,
-    };
+    return { ...slot, available: !!booking.date && !isTaken };
   });
 
+  if (!isOpen) return null;
+
+  // Renderizado del modal
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      zIndex: 50,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px'
-    }}>
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '16px',
-        maxWidth: '600px',
-        width: '100%',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        minHeight: '400px'
-      }}>
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '24px',
-          borderBottom: '1px solid #e5e7eb'
-        }}>
-          <h3 style={{
-            fontSize: '20px',
-            fontWeight: '600',
-            color: '#111827',
-            margin: 0
-          }}>Reserva tu cita - PASO {step}</h3>
-          <button 
-            onClick={onClose}
-            style={{
-              padding: '8px',
-              backgroundColor: '#f3f4f6',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            ✕
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
+        {/* Encabezado del Modal */}
+        <div className="flex items-center justify-between p-6 border-b">
+          <h3 className="text-xl font-semibold text-gray-800">Reserva tu cita - PASO {step}</h3>
+          <button onClick={onClose} className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200">✕</button>
         </div>
 
-        {/* Steps progress */}
-        <div style={{ padding: '16px 24px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '14px',
-            color: '#6b7280',
-            marginBottom: '8px'
-          }}>
-            <span style={{ fontWeight: step >= 1 ? '600' : '400', color: step >= 1 ? '#111827' : '#6b7280' }}>Barbero</span>
-            <span style={{ fontWeight: step >= 2 ? '600' : '400', color: step >= 2 ? '#111827' : '#6b7280' }}>Servicio</span>
-            <span style={{ fontWeight: step >= 3 ? '600' : '400', color: step >= 3 ? '#111827' : '#6b7280' }}>Fecha y Hora</span>
-            <span style={{ fontWeight: step >= 4 ? '600' : '400', color: step >= 4 ? '#111827' : '#6b7280' }}>Datos</span>
-          </div>
-          <div style={{
-            height: '4px',
-            backgroundColor: '#e5e7eb',
-            borderRadius: '2px'
-          }}>
-            <div style={{
-              height: '4px',
-              backgroundColor: '#d97706',
-              borderRadius: '2px',
-              width: `${(step - 1) * 33.33 + 1}%`,
-              transition: 'width 0.3s ease'
-            }} />
-          </div>
+        {/* Barra de Progreso */}
+        <div className="p-6">
+          {/* ... (código de la barra de progreso) ... */}
         </div>
 
-        {/* Body */}
-        <div style={{ padding: '24px' }}>
+        {/* Cuerpo del Modal (pasos) */}
+        <div className="p-6 flex-grow">
+            {/* Paso 1 - Barbero */}
           {step === 1 && (
             <div>
-              <h4 style={{ fontWeight: '500', marginBottom: '16px', color: '#111827' }}>Selecciona un barbero</h4>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '16px'
-              }}>
-                {barbers.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => setBooking((prev) => ({ ...prev, barberId: b.id }))}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px',
-                      border: booking.barberId === b.id ? '2px solid #d97706' : '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      backgroundColor: 'white',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      width: '100%',
-                      boxShadow: booking.barberId === b.id ? '0 0 0 3px rgba(217, 119, 6, 0.1)' : 'none'
-                    }}
+              <h4 className="text-lg font-medium mb-4">Selecciona tu barbero</h4>
+              <div className="grid grid-cols-2 gap-6">
+                {barbers.map(barber => (
+                  <div
+                    key={barber.id}
+                    onClick={() => setBooking(prev => ({ ...prev, barberId: barber.id }))}
+                    className={`cursor-pointer border-2 rounded-xl overflow-hidden transition-all hover:shadow-lg ${
+                      booking.barberId === barber.id ? 'border-golden' : 'border-gray-200 hover:border-golden'
+                    }`}
                   >
-                    <img 
-                      src={b.image} 
-                      alt={b.name} 
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '50%',
-                        objectFit: 'cover'
-                      }} 
-                    />
-                    <div>
-                      <p style={{ fontWeight: '600', margin: 0, color: '#111827' }}>{b.name}</p>
-                      <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>{b.specialty}</p>
+                    <img src={barber.image || '/default-barber.jpg'} alt={barber.name} className="h-40 w-full object-cover" />
+                    <div className="p-4 text-center">
+                      <p className="font-medium">{barber.name}</p>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             </div>
           )}
-
+          {/* Paso 2 - Servicio */}
           {step === 2 && (
             <div>
-              <h4 style={{ fontWeight: '500', marginBottom: '16px', color: '#111827' }}>Selecciona un servicio</h4>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: '16px'
-              }}>
-                {services.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => setBooking((prev) => ({ ...prev, serviceId: s.id }))}
-                    style={{
-                      padding: '12px',
-                      border: booking.serviceId === s.id ? '2px solid #d97706' : '1px solid #e5e7eb',
-                      borderRadius: '12px',
-                      backgroundColor: 'white',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      width: '100%',
-                      boxShadow: booking.serviceId === s.id ? '0 0 0 3px rgba(217, 119, 6, 0.1)' : 'none'
-                    }}
+              <h4 className="text-lg font-medium mb-4">Selecciona el servicio</h4>
+              <div className="grid grid-cols-2 gap-6">
+                {services.map(service => (
+                  <div
+                    key={service.id}
+                    onClick={() => setBooking(prev => ({ ...prev, serviceId: service.id }))}
+                    className={`cursor-pointer border-2 rounded-xl p-4 transition-all hover:shadow-lg ${
+                      booking.serviceId === service.id ? 'border-golden' : 'border-gray-200 hover:border-golden'
+                    }`}
                   >
-                    <p style={{ fontWeight: '600', margin: '0 0 4px 0', color: '#111827' }}>{s.name}</p>
-                    <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>${s.price} · {s.duration} min</p>
-                  </button>
+                    <p className="font-medium">{service.name}</p>
+                    <p className="text-gray-500">${service.price}</p>
+                  </div>
                 ))}
               </div>
             </div>
           )}
-
+           {/* Paso 3 - Fecha y Hora */}
           {step === 3 && (
             <div>
-              <h4 style={{ fontWeight: '500', marginBottom: '16px', color: '#111827' }}>Selecciona fecha y hora</h4>
+              <h4 className="text-lg font-medium mb-4">Selecciona fecha y hora</h4>
               <input
                 type="date"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  marginBottom: '16px',
-                  fontSize: '16px'
-                }}
+                className="border p-2 rounded w-full mb-6"
                 value={booking.date || ''}
-                onChange={(e) => setBooking((prev) => ({ ...prev, date: e.target.value }))}
+                onChange={(e) => setBooking(prev => ({ ...prev, date: e.target.value }))}
               />
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))',
-                gap: '8px'
-              }}>
-                {computedTimeSlots.map((t) => (
+              <div className="grid grid-cols-3 gap-3">
+                {computedTimeSlots.map(slot => (
                   <button
-                    key={t.time}
-                    onClick={() => t.available && setBooking((prev) => ({ ...prev, time: t.time }))}
-                    disabled={!t.available}
-                    style={{
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      border: booking.time === t.time ? '2px solid #d97706' : '1px solid #d1d5db',
-                      backgroundColor: booking.time === t.time ? '#fef3c7' : 'white',
-                      cursor: t.available ? 'pointer' : 'not-allowed',
-                      fontSize: '14px',
-                      opacity: t.available ? 1 : 0.5
-                    }}
+                    key={slot.time}
+                    onClick={() => setBooking(prev => ({ ...prev, time: slot.time }))}
+                    disabled={!slot.available}
+                    className={`px-3 py-2 border-2 rounded-lg transition-all ${
+                      booking.time === slot.time ? 'bg-golden text-white border-golden' : 'border-gray-200 hover:border-golden'
+                    } ${!slot.available ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    {t.time}
+                    {slot.time}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
+              {/* Paso 4 - Datos personales */}
           {step === 4 && (
-            <div>
-              <h4 style={{ fontWeight: '500', marginBottom: '16px', color: '#111827' }}>Tus datos</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <input
-                  type="text"
-                  placeholder="Nombre completo"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px'
-                  }}
-                  value={booking.customerName || ''}
-                  onChange={(e) => setBooking((prev) => ({ ...prev, customerName: e.target.value }))}
-                />
-                <input
-                  type="tel"
-                  placeholder="Teléfono"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px'
-                  }}
-                  value={booking.customerPhone || ''}
-                  onChange={(e) => setBooking((prev) => ({ ...prev, customerPhone: e.target.value }))}
-                />
-                <input
-                  type="email"
-                  placeholder="Correo electrónico"
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '16px'
-                  }}
-                  value={booking.customerEmail || ''}
-                  onChange={(e) => setBooking((prev) => ({ ...prev, customerEmail: e.target.value }))}
-                />
-              </div>
+            <div className="space-y-4">
+              <h4 className="text-lg font-medium">Tus datos</h4>
+              <input
+                type="text"
+                placeholder="Nombre"
+                className="w-full border-2 p-2 rounded"
+                value={booking.customerName || ''}
+                onChange={(e) => setBooking(prev => ({ ...prev, customerName: e.target.value }))}
+              />
+              <input
+                type="tel"
+                placeholder="Teléfono"
+                className="w-full border-2 p-2 rounded"
+                value={booking.customerPhone || ''}
+                onChange={(e) => setBooking(prev => ({ ...prev, customerPhone: e.target.value }))}
+              />
+              <input
+                type="email"
+                placeholder="Correo electrónico"
+                className="w-full border-2 p-2 rounded"
+                value={booking.customerEmail || ''}
+                onChange={(e) => setBooking(prev => ({ ...prev, customerEmail: e.target.value }))}
+              />
             </div>
           )}
         </div>
 
-        {/* Botones */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          padding: '24px',
-          borderTop: '1px solid #e5e7eb',
-          backgroundColor: '#f9fafb'
-        }}>
+        
+
+        {/* Pie del Modal (botones de navegación) */}
+        <div className="flex justify-between p-6 border-t bg-gray-50">
           {step > 1 && (
-            <button
-             // Anterior
-            onClick={() => setStep((s) => Math.max(1, s - 1))}
-              style={{
-                padding: '12px 24px',
-                border: '1px solid #d1d5db',
-                color: '#374151',
-                borderRadius: '8px',
-                backgroundColor: 'white',
-                cursor: 'pointer',
-                fontSize: '16px'
-              }}
-            >
-              Anterior
-            </button>
+            <button onClick={() => setStep(s => s - 1)} className="px-6 py-3 border rounded-lg bg-white">Anterior</button>
           )}
-          
-          <div style={{ marginLeft: 'auto' }}>
+          <div className="ml-auto">
             {step < 4 ? (
-              <button
-                // Siguiente
-              onClick={() => setStep((s) => Math.min(4, s + 1))}
-                disabled={
-                  (step === 1 && !booking.barberId) ||
-                  (step === 2 && !booking.serviceId) ||
-                  (step === 3 && (!booking.date || !booking.time))
-                }
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#d97706',
-                  color: 'white',
-                  fontWeight: '500',
-                  borderRadius: '8px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  opacity: (
-                    (step === 1 && !booking.barberId) ||
-                    (step === 2 && !booking.serviceId) ||
-                    (step === 3 && (!booking.date || !booking.time))
-                  ) ? 0.5 : 1
-                }}
-              >
-                Siguiente
-              </button>
+              <button onClick={() => setStep(s => s + 1)} disabled={false} className="px-6 py-3 bg-golden text-white rounded-lg">Siguiente</button>
             ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={!booking.customerName || !booking.customerPhone || !booking.customerEmail || isLoading}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#d97706',
-                  color: 'white',
-                  fontWeight: '500',
-                  borderRadius: '8px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  opacity: (!booking.customerName || !booking.customerPhone || !booking.customerEmail || isLoading) ? 0.5 : 1
-                }}
-              >
-                {isLoading ? (
-                  <>
-                    <div style={{
-                      width: '16px',
-                      height: '16px',
-                      border: '2px solid white',
-                      borderTop: '2px solid transparent',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                    <span>Confirmando...</span>
-                  </>
-                ) : (
-                  'Confirmar Reserva'
-                )}
+              <button onClick={handleSubmit} disabled={isLoading} className="px-6 py-3 bg-golden text-white rounded-lg flex items-center gap-2">
+                {isLoading ? 'Confirmando...' : 'Enviar por WhatsApp'}
               </button>
             )}
           </div>

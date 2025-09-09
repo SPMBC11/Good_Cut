@@ -3,7 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Scissors, Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import bcrypt from "bcryptjs";
 
+/**
+ * @component Login
+ * 
+ * Página de inicio de sesión para el panel de administración.
+ * Utiliza credenciales predefinidas y `bcryptjs` para la comparación de contraseñas.
+ * En un entorno de producción, esto debería ser reemplazado por una llamada a una API de autenticación.
+ */
 export default function Login() {
+  // Estados para los campos del formulario y la UI
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -11,18 +19,27 @@ export default function Login() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // 🔑 Usuario "guardado" (mock)
+  // --- Credenciales de Administrador (simuladas) ---
+  // En una aplicación real, estas credenciales vendrían de una base de datos.
   const storedEmail = "admin@barber.com";
-  const storedHashedPassword = bcrypt.hashSync("admin123", 10);
+  const storedHashedPassword = bcrypt.hashSync("admin123", 10); // Contraseña "admin123" hasheada
 
+  /**
+   * Maneja el envío del formulario de inicio de sesión.
+   * Compara las credenciales ingresadas con las almacenadas.
+   * Si son correctas, guarda el estado de administrador en `localStorage` y redirige al panel.
+   * 
+   * @param {React.FormEvent} e - Evento del formulario.
+   */
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Simular delay de autenticación
+    // Simula un retraso de red para una mejor experiencia de usuario
     await new Promise(resolve => setTimeout(resolve, 1000));
 
+    // Compara el email y la contraseña (usando bcrypt para la contraseña)
     if (email === storedEmail && bcrypt.compareSync(password, storedHashedPassword)) {
       localStorage.setItem("isAdmin", "true");
       localStorage.setItem("adminEmail", email);
@@ -34,20 +51,23 @@ export default function Login() {
     setIsLoading(false);
   };
 
+  /**
+   * Redirige al usuario a la página de inicio.
+   */
   const handleBackToHome = () => {
     navigate("/");
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-dark via-gray-900 to-dark flex items-center justify-center p-4">
-      {/* Background Pattern */}
+      {/* Patrón de fondo decorativo */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M30 30c0-11.046-8.954-20-20-20s-20 8.954-20 20 8.954 20 20 20 20-8.954 20-20zm0 0c0 11.046 8.954 20 20 20s20-8.954 20-20-8.954-20-20-20-20 8.954-20 20z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
         }} />
       </div>
 
-      {/* Back to Home Button */}
+      {/* Botón para volver al inicio */}
       <button
         onClick={handleBackToHome}
         className="absolute top-6 left-6 flex items-center gap-2 text-white hover:text-golden transition-colors z-10"
@@ -57,9 +77,9 @@ export default function Login() {
       </button>
 
       <div className="relative w-full max-w-md">
-        {/* Login Card */}
+        {/* Tarjeta de Login */}
         <div className="bg-white rounded-3xl shadow-2xl border border-gray-200 p-8">
-          {/* Header */}
+          {/* Encabezado */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-golden rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Scissors className="w-8 h-8 text-dark" />
@@ -68,9 +88,9 @@ export default function Login() {
             <p className="text-gray-600">Panel de Administración</p>
           </div>
 
-          {/* Form */}
+          {/* Formulario de Login */}
           <form onSubmit={handleLogin} className="space-y-6">
-            {/* Email Field */}
+            {/* Campo de Email */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Correo Electrónico</label>
               <div className="relative">
@@ -86,7 +106,7 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Password Field */}
+            {/* Campo de Contraseña */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Contraseña</label>
               <div className="relative">
@@ -109,14 +129,14 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Error Message */}
+            {/* Mensaje de Error */}
             {error && (
               <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3">
                 <p className="text-red-300 text-sm text-center">{error}</p>
               </div>
             )}
 
-            {/* Submit Button */}
+            {/* Botón de Envío */}
             <button
               type="submit"
               disabled={isLoading}
@@ -133,7 +153,7 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
+          {/* Credenciales de Demostración */}
           <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <p className="text-xs text-gray-600 text-center mb-2">Credenciales de demostración:</p>
             <div className="text-xs text-gray-700 space-y-1">
@@ -143,7 +163,7 @@ export default function Login() {
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Pie de Página */}
         <div className="text-center mt-6">
           <p className="text-gray-400 text-sm">
             © 2024 Good Cut. Todos los derechos reservados.

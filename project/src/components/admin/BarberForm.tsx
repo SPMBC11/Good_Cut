@@ -1,16 +1,34 @@
 // src/components/admin/BarberForm.tsx
+
 import React, { useState, useEffect } from "react";
 import { User, Scissors, Clock, Star, Phone, Image, Save, X } from "lucide-react";
 import { useBarbers } from "../../context/BarberContext";
 import type { Barber } from "../../types";
 
+/**
+ * @interface BarberFormProps
+ * @property {string | null} editId - El ID del barbero a editar. Si es nulo, el formulario es para crear un nuevo barbero.
+ * @property {() => void} onFinished - Callback que se ejecuta cuando el formulario se cierra o la operación (crear/editar) ha terminado.
+ */
 interface BarberFormProps {
-  editId: string | null;       // 🔹 id del barbero a editar
-  onFinished: () => void;      // 🔹 callback al terminar (crear/editar)
+  editId: string | null;
+  onFinished: () => void;
 }
 
+/**
+ * Componente BarberForm
+ * 
+ * Formulario para crear o editar un barbero.
+ * Utiliza el contexto de barberos para añadir o actualizar la información.
+ * 
+ * @param {BarberFormProps} props - Propiedades del componente.
+ * @returns {React.FC}
+ */
 const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
+  // Hook para acceder al contexto de los barberos
   const { barbers, addBarber, updateBarber } = useBarbers();
+
+  // Estado para el formulario del barbero
   const [form, setForm] = useState<Omit<Barber, "id">>({
     name: "",
     specialty: "",
@@ -19,24 +37,29 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
     rating: 0,
     phone: "",
   });
+
+  // Estado para controlar la carga durante el envío del formulario
   const [isLoading, setIsLoading] = useState(false);
 
-  // 🔹 Si editamos, cargamos los datos en el formulario
+  /**
+   * useEffect para cargar los datos del barbero cuando se edita.
+   * Se ejecuta cuando `editId` o `barbers` cambian.
+   */
   useEffect(() => {
     if (editId) {
-      const barber = barbers.find((b) => b.id === editId);
-      if (barber) {
+      const barberToEdit = barbers.find((b) => b.id === editId);
+      if (barberToEdit) {
         setForm({
-          name: barber.name,
-          specialty: barber.specialty,
-          experience: barber.experience,
-          image: barber.image,
-          rating: barber.rating,
-          phone: barber.phone,
+          name: barberToEdit.name,
+          specialty: barberToEdit.specialty,
+          experience: barberToEdit.experience,
+          image: barberToEdit.image,
+          rating: barberToEdit.rating,
+          phone: barberToEdit.phone,
         });
       }
     } else {
-      // reset si no hay edición
+      // Resetea el formulario si no hay un barbero para editar
       setForm({
         name: "",
         specialty: "",
@@ -48,45 +71,58 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
     }
   }, [editId, barbers]);
 
+  /**
+   * Maneja el envío del formulario.
+   * Previene el comportamiento por defecto, activa el estado de carga,
+   * y luego añade o actualiza un barbero.
+   * 
+   * @param {React.FormEvent} e - Evento del formulario.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simular delay de guardado
+    // Simula un pequeño retraso para dar feedback visual
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     if (editId) {
-      // ✅ ahora pasamos UN SOLO objeto Barber
+      // Si hay un editId, actualiza el barbero existente
       updateBarber({ id: editId, ...form });
     } else {
+      // Si no, crea un nuevo barbero con un ID temporal
       addBarber({ id: Date.now().toString(), ...form });
     }
     
     setIsLoading(false);
-    onFinished(); // 🔹 reseteamos edición
+    onFinished(); // Llama al callback para cerrar el formulario
   };
 
+  /**
+   * Maneja la cancelación del formulario.
+   * Simplemente llama al callback `onFinished`.
+   */
   const handleCancel = () => {
     onFinished();
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Preview de la imagen */}
+      {/* Preview de la imagen del barbero */}
       {form.image && (
         <div className="text-center">
           <img
             src={form.image}
-            alt="Preview"
+            alt="Preview del barbero"
             className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-gray-200"
             onError={(e) => {
+              // Oculta la imagen si hay un error al cargarla
               e.currentTarget.style.display = 'none';
             }}
           />
         </div>
       )}
 
-      {/* Nombre */}
+      {/* Campo: Nombre Completo */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <User size={16} />
@@ -102,7 +138,7 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
         />
       </div>
 
-      {/* Especialidad */}
+      {/* Campo: Especialidad */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Scissors size={16} />
@@ -124,7 +160,7 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
         </select>
       </div>
 
-      {/* Experiencia */}
+      {/* Campo: Años de Experiencia */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Clock size={16} />
@@ -140,7 +176,7 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
         />
       </div>
 
-      {/* Teléfono */}
+      {/* Campo: Teléfono */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Phone size={16} />
@@ -156,7 +192,7 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
         />
       </div>
 
-      {/* Calificación */}
+      {/* Campo: Calificación */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Star size={16} />
@@ -189,7 +225,7 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
         </div>
       </div>
 
-      {/* URL de Imagen */}
+      {/* Campo: URL de Imagen */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Image size={16} />
@@ -203,11 +239,11 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
           className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent transition-all"
         />
         <p className="text-xs text-gray-500">
-          Ingresa la URL de una imagen del barbero
+          Ingresa la URL de una imagen para el barbero.
         </p>
       </div>
 
-      {/* Botones */}
+      {/* Botones de Acción */}
       <div className="flex gap-3 pt-4">
         <button
           type="button"

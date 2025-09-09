@@ -2,19 +2,17 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Star, Phone, User } from "lucide-react";
-import { useBarbers } from "../../context/BarberContext"; // 🔹 nuevo
+import { useBarbers } from "../../context/BarberContext";
+import type { Barber } from "../../types";
 
-interface Barber {
-  id: string;
-  name: string;
-  specialty: string;
-  experience: string; // <-- obligatorio aquí
-  image: string;
-  rating: number;
-  phone: string;
-}
-
-
+/**
+ * @interface BarberDetailsProps
+ * @property {Barber} barber - El objeto del barbero a mostrar.
+ * @property {(barber: Barber) => void} [onEdit] - Callback para editar el barbero (modo admin).
+ * @property {(id: string) => void} [onDelete] - Callback para eliminar el barbero (modo admin).
+ * @property {(barber: Barber) => void} [onBook] - Callback para reservar una cita (modo usuario).
+ * @property {boolean} [isAdmin] - Flag para determinar si la vista es de administrador.
+ */
 interface BarberDetailsProps {
   barber: Barber;
   onEdit?: (barber: Barber) => void;
@@ -23,6 +21,16 @@ interface BarberDetailsProps {
   isAdmin?: boolean;
 }
 
+/**
+ * @component BarberDetails
+ * 
+ * Muestra los detalles de un barbero en una tarjeta.
+ * Tiene una vista para administradores con opciones de edición y borrado,
+ * y una vista para usuarios con la opción de reservar.
+ * 
+ * @param {BarberDetailsProps} props - Propiedades del componente.
+ * @returns {React.FC}
+ */
 const BarberDetails: React.FC<BarberDetailsProps> = ({
   barber,
   onEdit,
@@ -30,10 +38,12 @@ const BarberDetails: React.FC<BarberDetailsProps> = ({
   onBook,
   isAdmin = false,
 }) => {
-  const { bookings } = useBarbers(); // 🔹 accedemos a las reservas
+  // Hook para acceder a las reservas desde el contexto
+  const { bookings } = useBarbers();
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg rounded-2xl overflow-hidden">
+      {/* Imagen del barbero */}
       <img
         src={barber.image}
         alt={barber.name}
@@ -48,6 +58,7 @@ const BarberDetails: React.FC<BarberDetailsProps> = ({
       </CardHeader>
 
       <CardContent className="space-y-3">
+        {/* Información del barbero */}
         <p className="text-gray-700">
           <span className="font-semibold">Especialidad:</span>{" "}
           {barber.specialty}
@@ -65,7 +76,7 @@ const BarberDetails: React.FC<BarberDetailsProps> = ({
           {barber.phone}
         </p>
 
-        {/* 🔹 Bloque de citas solo visible para admin */}
+        {/* Sección de citas (solo visible para administradores) */}
         {isAdmin && (
           <div className="mt-6">
             <h3 className="font-semibold mb-2">Citas de este barbero:</h3>
@@ -85,7 +96,7 @@ const BarberDetails: React.FC<BarberDetailsProps> = ({
           </div>
         )}
 
-        {/* Botones dinámicos */}
+        {/* Botones de acción dinámicos según el rol (admin/usuario) */}
         <div className="flex justify-between pt-4">
           {isAdmin ? (
             <>

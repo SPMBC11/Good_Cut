@@ -1,6 +1,14 @@
 // src/data/mockData.ts
 import type { Service, TimeSlot } from "../types";
 
+/**
+ * @file mockData.ts
+ * 
+ * Este archivo contiene los datos de ejemplo (mock data) para la aplicación.
+ * Se utiliza para inicializar el estado cuando no hay datos guardados en localStorage.
+ */
+
+// Lista de servicios de ejemplo
 export const services: Service[] = [
   {
     id: "1",
@@ -10,6 +18,7 @@ export const services: Service[] = [
     duration: 40,
     image:
       "https://images.unsplash.com/photo-1621607512200-6f5b2b96cfa0?q=80&w=1280&auto=format&fit=crop",
+    status: "active",
   },
   {
     id: "2",
@@ -19,6 +28,7 @@ export const services: Service[] = [
     duration: 30,
     image:
       "https://images.unsplash.com/photo-1562259949-e8e7689d7828?q=80&w=1280&auto=format&fit=crop",
+    status: "active",
   },
   {
     id: "3",
@@ -28,6 +38,7 @@ export const services: Service[] = [
     duration: 60,
     image:
       "https://images.unsplash.com/photo-1517837016564-bfc3ffd67455?q=80&w=1280&auto=format&fit=crop",
+    status: "active",
   },
   {
     id: "4",
@@ -37,6 +48,7 @@ export const services: Service[] = [
     duration: 25,
     image:
       "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=1280&auto=format&fit=crop",
+    status: "active",
   },
   {
     id: "5",
@@ -46,6 +58,7 @@ export const services: Service[] = [
     duration: 45,
     image:
       "https://images.unsplash.com/photo-1605497788044-5f7f1c6d7a0e?q=80&w=1280&auto=format&fit=crop",
+    status: "active",
   },
   {
     id: "6",
@@ -55,28 +68,29 @@ export const services: Service[] = [
     duration: 70,
     image:
       "https://images.unsplash.com/photo-1503951914958-c4c4b8c3b34d?q=80&w=1280&auto=format&fit=crop",
+    status: "maintenance",
   },
 ];
 
+// Lista de horarios disponibles para las reservas
 export const timeSlots: TimeSlot[] = [
   { time: "09:00", available: true },
   { time: "09:30", available: true },
-  { time: "10:00", available: false },
+  { time: "10:00", available: true },
   { time: "10:30", available: true },
   { time: "11:00", available: true },
   { time: "11:30", available: true },
-  { time: "12:00", available: false },
+  { time: "12:00", available: true },
   { time: "12:30", available: true },
   { time: "13:00", available: true },
   { time: "13:30", available: true },
   { time: "14:00", available: true },
-  { time: "14:30", available: false },
+  { time: "14:30", available: true },
   { time: "15:00", available: true },
   { time: "15:30", available: true },
   { time: "16:00", available: true },
   { time: "16:30", available: true },
-  { time: "17:00", available: false },
+  { time: "17:00", available: true },
   { time: "17:30", available: true },
   { time: "18:00", available: true },
 ];
-

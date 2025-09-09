@@ -9,13 +9,22 @@ import Contact from "./Contact";
 import Footer from "./Footer";
 import type { Barber } from "../types";
 
+/**
+ * @component Home
+ * 
+ * Componente principal que ensambla todas las secciones de la página de inicio.
+ * Gestiona el estado del modal de reservas y la navegación entre secciones.
+ */
 export default function Home() {
+  // Estado para controlar la visibilidad del modal de reservas
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  // Estado para almacenar el barbero seleccionado para la reserva
   const [selectedBarber, setSelectedBarber] = useState<Barber | null>(null);
 
-  // Debug log
-  console.log('Home render - isBookingOpen:', isBookingOpen, 'selectedBarber:', selectedBarber);
-
+  /**
+   * Navega suavemente a una sección de la página.
+   * @param {string} sectionId - El ID del elemento de la sección a la que se quiere navegar.
+   */
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -23,27 +32,36 @@ export default function Home() {
     }
   };
 
+  /**
+   * Abre el modal de reservas.
+   * Opcionalmente, puede preseleccionar un barbero.
+   * @param {Barber | null} [barber=null] - El barbero a preseleccionar.
+   */
   const handleBooking = (barber: Barber | null = null) => {
-    console.log('handleBooking called with:', barber);
     setSelectedBarber(barber);
     setIsBookingOpen(true);
-    console.log('Modal should be open now');
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-light">
+      {/* Encabezado de la página */}
       <Header onNavigate={scrollToSection} />
-      <Hero onBooking={() => handleBooking(null)} />
-      <Services />
-      <Barbers onBooking={handleBooking} />
-      <Contact />
+      
+      {/* Secciones principales de la página */}
+      <main>
+        <Hero onBooking={() => handleBooking(null)} onNavigate={scrollToSection} />
+        <Services />
+        <Barbers onBooking={handleBooking} />
+        <Contact />
+      </main>
+
+      {/* Pie de página */}
       <Footer />
+
+      {/* Modal de Reservas (se muestra sobre el resto del contenido) */}
       <BookingModal
         isOpen={isBookingOpen}
-        onClose={() => {
-          console.log('Closing modal');
-          setIsBookingOpen(false);
-        }}
+        onClose={() => setIsBookingOpen(false)}
         selectedBarber={selectedBarber}
       />
     </div>

@@ -1,7 +1,13 @@
 import * as React from "react";
 import { cn } from "../../lib/utils";
 
-// Card
+/**
+ * @component Card
+ * 
+ * Contenedor principal para una tarjeta. Proporciona el estilo base como el fondo, borde y sombra.
+ * @param {React.ReactNode} children - Contenido de la tarjeta.
+ * @param {string} [className] - Clases CSS adicionales para personalizar el contenedor.
+ */
 export const Card = ({
   children,
   className = "",
@@ -16,7 +22,13 @@ export const Card = ({
   );
 };
 
-// CardHeader
+/**
+ * @component CardHeader
+ * 
+ * Contenedor para la cabecera de una tarjeta. Generalmente contiene el título.
+ * @param {React.ReactNode} children - Contenido de la cabecera.
+ * @param {string} [className] - Clases CSS adicionales.
+ */
 export const CardHeader = ({
   children,
   className = "",
@@ -27,7 +39,13 @@ export const CardHeader = ({
   <div className={cn("mb-2", className)}>{children}</div>
 );
 
-// CardTitle
+/**
+ * @component CardTitle
+ * 
+ * Componente para el título de una tarjeta. Debe usarse dentro de `CardHeader`.
+ * @param {React.ReactNode} children - El texto del título.
+ * @param {string} [className] - Clases CSS adicionales.
+ */
 export const CardTitle = ({
   children,
   className = "",
@@ -38,7 +56,13 @@ export const CardTitle = ({
   <h2 className={cn("text-lg font-semibold", className)}>{children}</h2>
 );
 
-// CardContent
+/**
+ * @component CardContent
+ * 
+ * Contenedor para el contenido principal de una tarjeta.
+ * @param {React.ReactNode} children - El contenido principal.
+ * @param {string} [className] - Clases CSS adicionales.
+ */
 export const CardContent = ({
   children,
   className = "",

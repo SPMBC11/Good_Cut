@@ -14,16 +14,29 @@ import {
 import ManageBarbers from "./ManageBarbers";
 import ManageBookings from "./ManageBookings";
 import ManageServices from "./ManageServices";
+import WalkInCuts from "./WalkInCuts";
 import Reports from "./Reports";
 import NotificationToast from "./NotificationToast";
 import { useBarbers } from "../../context/BarberContext";
+import  SettingsPage from "./SettingsPage";
 
+
+/**
+ * @component AdminDashboard
+ * 
+ * El panel de administración principal. 
+ * Permite a los administradores gestionar barberos, reservas, servicios y ver reportes.
+ * Es el componente central que renderiza las diferentes vistas de administración.
+ */
 export default function AdminDashboard() {
+  // Estado para controlar la vista actual (ej. "dashboard", "barbers")
   const [view, setView] = useState("dashboard");
+  // Estado para controlar la visibilidad del menú lateral en móviles
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Hook para acceder a los datos globales de la aplicación
   const { barbers, bookings, notifications, clearNotifications } = useBarbers();
 
-  // Calcular estadísticas
+  // --- Cálculo de Estadísticas para el Dashboard ---
   const totalBarbers = barbers.length;
   const totalBookings = bookings.length;
   const averageRating = barbers.length > 0 
@@ -33,15 +46,21 @@ export default function AdminDashboard() {
     new Date(booking.date).toDateString() === new Date().toDateString()
   ).length;
 
+  // --- Definición de los Items del Menú de Navegación ---
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "barbers", label: "Barberos", icon: Users },
     { id: "bookings", label: "Reservas", icon: Calendar },
+    { id: "walkins", label: "Cortes Sin Reserva", icon: UserCheck },
     { id: "services", label: "Servicios", icon: Scissors },
     { id: "reports", label: "Reportes", icon: BarChart },
     { id: "settings", label: "Configuración", icon: Settings },
   ];
 
+  /**
+   * Cierra la sesión del administrador, eliminando los datos de `localStorage`
+   * y redirigiendo a la página de inicio.
+   */
   const handleLogout = () => {
     localStorage.removeItem("isAdmin");
     localStorage.removeItem("adminEmail");
@@ -50,9 +69,9 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
+      {/* --- Menú Lateral (Sidebar) --- */}
       <aside className={`w-72 bg-dark text-white flex flex-col shadow-2xl lg:relative fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        {/* Header */}
+        {/* Encabezado del Sidebar */}
         <div className="p-6 border-b border-gray-700">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-golden rounded-lg flex items-center justify-center">
@@ -65,16 +84,16 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* Navegación Principal */}
         <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
-                        <button
+              <button
                 key={item.id}
                 onClick={() => {
                   setView(item.id);
-                  setSidebarOpen(false);
+                  setSidebarOpen(false); // Cierra el menú en móvil al seleccionar una opción
                 }}
                 className={`flex items-center gap-3 p-3 rounded-xl w-full text-left transition-all duration-200 ${
                   view === item.id
@@ -84,12 +103,12 @@ export default function AdminDashboard() {
               >
                 <Icon size={20} />
                 {item.label}
-          </button>
+              </button>
             );
           })}
         </nav>
 
-        {/* Logout */}
+        {/* Botón de Cerrar Sesión */}
         <div className="p-4 border-t border-gray-700">
           <button
             onClick={handleLogout}
@@ -101,7 +120,7 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* Mobile overlay */}
+      {/* Overlay para cerrar el menú en móvil */}
       {sidebarOpen && (
         <div 
           className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40" 
@@ -109,12 +128,13 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* Main content */}
+      {/* --- Contenido Principal --- */}
       <main className="flex-1 overflow-y-auto lg:ml-0">
-        {/* Header */}
+        {/* Encabezado del Contenido Principal */}
         <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              {/* Botón para abrir/cerrar menú en móvil */}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
@@ -123,15 +143,12 @@ export default function AdminDashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
+              {/* Título de la vista actual */}
               <h2 className="text-2xl font-bold text-dark">
-              {view === "dashboard" && "Dashboard"}
-              {view === "barbers" && "Gestión de Barberos"}
-              {view === "bookings" && "Reservas y Citas"}
-              {view === "services" && "Servicios"}
-              {view === "reports" && "Reportes y Análisis"}
-              {view === "settings" && "Configuración"}
+                {menuItems.find(item => item.id === view)?.label}
               </h2>
             </div>
+            {/* Fecha actual */}
             <div className="text-sm text-gray-500">
               {new Date().toLocaleDateString('es-ES', { 
                 weekday: 'long', 
@@ -143,12 +160,13 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* Content */}
+        {/* Contenido dinámico según la vista seleccionada */}
         <div className="p-6">
           {view === "dashboard" && (
             <div className="space-y-6">
-              {/* Stats Cards */}
+              {/* Tarjetas de Estadísticas */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* Total Barberos */}
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
@@ -161,6 +179,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* Reservas Totales */}
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
@@ -173,6 +192,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* Citas Hoy */}
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
@@ -185,6 +205,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* Calificación Promedio */}
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
                   <div className="flex items-center justify-between">
                     <div>
@@ -198,8 +219,9 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Recent Activity */}
+              {/* Actividad Reciente y Barberos Destacados */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Actividad Reciente */}
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                   <h3 className="text-lg font-semibold text-dark mb-4">Actividad Reciente</h3>
                   <div className="space-y-3">
@@ -220,6 +242,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* Barberos Destacados */}
                 <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                   <h3 className="text-lg font-semibold text-dark mb-4">Barberos Destacados</h3>
                   <div className="space-y-3">
@@ -251,20 +274,17 @@ export default function AdminDashboard() {
             </div>
           )}
 
-        {view === "barbers" && <ManageBarbers />}
+          {/* Renderiza el componente de gestión correspondiente a la vista */}
+          {view === "barbers" && <ManageBarbers />}
           {view === "bookings" && <ManageBookings />}
+          {view === "walkins" && <WalkInCuts />}
           {view === "services" && <ManageServices />}
           {view === "reports" && <Reports />}
-          {view === "settings" && (
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-              <h3 className="text-lg font-semibold text-dark mb-4">Configuración del Sistema</h3>
-              <p className="text-gray-600">Configuraciones del sistema en desarrollo...</p>
-            </div>
-          )}
+          {view === "settings" && <SettingsPage />}
         </div>
       </main>
 
-      {/* Notifications */}
+      {/* Componente de Notificaciones Toast */}
       <NotificationToast 
         notifications={notifications} 
         onClear={clearNotifications} 

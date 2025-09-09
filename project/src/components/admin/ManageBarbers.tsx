@@ -6,28 +6,48 @@ import BarberForm from "./BarberForm";
 import BarberList from "./BarberList";
 import type { Barber } from "../../types";
 
+/**
+ * @component ManageBarbers
+ * 
+ * Componente principal para la gestión de barberos en el panel de administración.
+ * Permite ver, buscar, crear y editar barberos.
+ */
 const ManageBarbers: React.FC = () => {
+  // Estado para el ID del barbero que se está editando
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Estado para el término de búsqueda
   const [searchTerm, setSearchTerm] = useState("");
+  // Estado para mostrar/ocultar el formulario de creación/edición
   const [showForm, setShowForm] = useState(false);
+  // Hook para acceder a la lista de barberos del contexto
   const { barbers } = useBarbers();
 
-  // Filtrar barberos por búsqueda
+  // Filtra los barberos según el término de búsqueda en nombre o especialidad
   const filteredBarbers = barbers.filter(barber =>
     barber.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     barber.specialty.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  /**
+   * Maneja la acción de crear un nuevo barbero, mostrando el formulario.
+   */
   const handleNewBarber = () => {
-    setEditingId(null);
+    setEditingId(null); // Asegura que no estamos en modo edición
     setShowForm(true);
   };
 
+  /**
+   * Maneja la acción de editar un barbero, estableciendo el ID y mostrando el formulario.
+   * @param {Barber} barber - El barbero a editar.
+   */
   const handleEditBarber = (barber: Barber) => {
     setEditingId(barber.id);
     setShowForm(true);
   };
 
+  /**
+   * Se ejecuta cuando el formulario se cierra, reseteando los estados de edición.
+   */
   const handleFormFinished = () => {
     setEditingId(null);
     setShowForm(false);
@@ -35,7 +55,7 @@ const ManageBarbers: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Encabezado de la sección */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-dark">Gestión de Barberos</h1>
@@ -50,8 +70,9 @@ const ManageBarbers: React.FC = () => {
         </button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Tarjetas de estadísticas rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Total de barberos */}
         <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -64,6 +85,7 @@ const ManageBarbers: React.FC = () => {
           </div>
         </div>
         
+        {/* Barberos activos (simulado) */}
         <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -76,6 +98,7 @@ const ManageBarbers: React.FC = () => {
           </div>
         </div>
         
+        {/* Calificación promedio */}
         <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
@@ -94,7 +117,7 @@ const ManageBarbers: React.FC = () => {
         </div>
       </div>
 
-      {/* Search and Filter */}
+      {/* Barra de búsqueda y filtros */}
       <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
@@ -114,9 +137,9 @@ const ManageBarbers: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Contenido principal: Lista y Formulario */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Lista de barberos */}
+        {/* Columna de la lista de barberos */}
         <div className="xl:col-span-2">
           <div className="bg-white rounded-xl shadow-lg border border-gray-100">
             <div className="p-4 border-b border-gray-100">
@@ -142,7 +165,7 @@ const ManageBarbers: React.FC = () => {
           </div>
         </div>
 
-        {/* Formulario de creación/edición */}
+        {/* Columna del formulario de creación/edición */}
         <div className="xl:col-span-1">
           <div className="bg-white rounded-xl shadow-lg border border-gray-100">
             <div className="p-4 border-b border-gray-100">
