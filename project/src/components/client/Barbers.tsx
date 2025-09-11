@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useBarbers } from '../context/BarberContext';
-import type { Barber } from '../types';
+import { useBarbers } from '../../context/BarberContext';
+import type { Barber } from '../../types';
 
 /**
  * @interface BarbersProps

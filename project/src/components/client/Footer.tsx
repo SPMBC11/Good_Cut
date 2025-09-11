@@ -1,6 +1,6 @@
 import React from 'react';
 import { Scissors, Facebook, Instagram, Twitter } from 'lucide-react';
-import { useSettings } from '../context/SettingsContext'; // Corregido: Ruta de importación
+import { useSettings } from '../../context/SettingsContext'; // Corregido: Ruta de importación
 
 /**
  * @component Footer

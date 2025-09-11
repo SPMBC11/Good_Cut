@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LoadingSpinner from "./components/LoadingSpinner";
-import Home from "./components/Home";
+import LoadingSpinner from "./components/client/LoadingSpinner";
+import Home from "./components/client/Home";
 import Login from "./components/admin/Login";
-import NotFound from "./components/NotFound";
+import NotFound from "./components/client/NotFound";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import { BarberProvider } from "./context/BarberContext";
 import { ServiceProvider } from "./context/ServiceContext";

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Scissors } from 'lucide-react';
-import { useSettings } from '../context/SettingsContext'; // Importar useSettings
+import { useSettings } from '../../context/SettingsContext'; // Importar useSettings
 
 /**
  * @interface HeaderProps

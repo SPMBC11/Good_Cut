@@ -1,10 +1,10 @@
 // src/components/BookingModal.tsx
 import React, { useEffect, useState } from 'react';
-import { timeSlots } from '../data/mockData';
-import { Booking } from '../types';
-import type { Barber } from '../types';
-import { useBarbers } from '../context/BarberContext';
-import { useServices } from '../context/ServiceContext';
+import { timeSlots } from '../../data/mockData';
+import { Booking } from '../../types';
+import type { Barber } from '../../types';
+import { useBarbers } from '../../context/BarberContext';
+import { useServices } from '../../context/ServiceContext';
 
 /**
  * @interface BookingModalProps

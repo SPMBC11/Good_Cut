@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { Clock, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useServices } from '../context/ServiceContext';
+import { useServices } from '../../context/ServiceContext';
 
 /**
  * @component Services

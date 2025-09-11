@@ -7,7 +7,7 @@ import Barbers from "./Barbers";
 import BookingModal from "./BookingModal";
 import Contact from "./Contact";
 import Footer from "./Footer";
-import type { Barber } from "../types";
+import type { Barber } from "../../types";
 
 /**
  * @component Home
