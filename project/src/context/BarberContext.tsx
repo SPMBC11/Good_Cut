@@ -1,6 +1,7 @@
 // src/context/BarberContext.tsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Barber, Booking } from "../types";
+import bcrypt from "bcryptjs";
 
 /**
  * @interface BarberContextProps
@@ -13,6 +14,7 @@ interface BarberContextProps {
   addBarber: (barber: Barber) => void;
   updateBarber: (barber: Barber) => void;
   deleteBarber: (id: string) => void;
+  changeBarberPassword: (barberId: string, oldPassword: string, newPassword: string) => Promise<void>;
   addBooking: (booking: Booking) => void;
   updateBookingStatus: (id: string, status: 'pending' | 'completed' | 'cancelled') => void;
   deleteBooking: (id: string) => void;
@@ -79,6 +81,22 @@ export const BarberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (barber) addNotification(`Barbero eliminado: ${barber.name}`);
   };
 
+  const changeBarberPassword = async (barberId: string, oldPassword: string, newPassword: string) => {
+    const barber = barbers.find(b => b.id === barberId);
+    if (!barber || !barber.password) {
+      throw new Error("Barbero no encontrado o sin contraseña.");
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, barber.password);
+    if (!isMatch) {
+      throw new Error("La contraseña actual es incorrecta.");
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+    const updatedBarber = { ...barber, password: hashedNewPassword };
+    updateBarber(updatedBarber);
+  };
+
   // --- Funciones para Reservas ---
   const addBooking = (booking: Booking) => {
     setBookings((prev) => [...prev, booking]);
@@ -86,27 +104,27 @@ export const BarberProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const updateBookingStatus = (id: string, status: 'pending' | 'completed' | 'cancelled') => {
-  setBookings((prev) => {
-    const updated = prev.map((b) =>
-      b.id === id ? { ...b, status } : b
-    );
-    const booking = prev.find((b) => b.id === id);
-    if (booking) {
-      addNotification(`Reserva de ${booking.customerName} marcada como ${status}`);
-    }
-    return updated;
-  });
-};
+    setBookings((prev) => {
+      const updated = prev.map((b) =>
+        b.id === id ? { ...b, status } : b
+      );
+      const booking = prev.find((b) => b.id === id);
+      if (booking) {
+        addNotification(`Reserva de ${booking.customerName} marcada como ${status}`);
+      }
+      return updated;
+    });
+  };
   
-const deleteBooking = (id: string) => {
-  setBookings((prev) => {
-    const booking = prev.find((b) => b.id === id);
-    if (booking) {
-      addNotification(`Reserva eliminada para ${booking.customerName}`);
-    }
-    return prev.filter((b) => b.id !== id);
-  });
-};
+  const deleteBooking = (id: string) => {
+    setBookings((prev) => {
+      const booking = prev.find((b) => b.id === id);
+      if (booking) {
+        addNotification(`Reserva eliminada para ${booking.customerName}`);
+      }
+      return prev.filter((b) => b.id !== id);
+    });
+  };
 
   // --- Funciones para Notificaciones ---
   const addNotification = (message: string) => {
@@ -127,6 +145,7 @@ const deleteBooking = (id: string) => {
       addBarber, 
       updateBarber, 
       deleteBarber, 
+      changeBarberPassword,
       addBooking, 
       updateBookingStatus,
       deleteBooking,

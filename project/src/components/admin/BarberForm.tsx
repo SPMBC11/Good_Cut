@@ -1,67 +1,49 @@
 // src/components/admin/BarberForm.tsx
 
-import React, { useState, useEffect } from "react";
-import { User, Scissors, Clock, Star, Phone, Image, Save, X } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { User, Scissors, Clock, Star, Phone, Image, Save, X, Mail, Lock } from "lucide-react";
 import { useBarbers } from "../../context/BarberContext";
 import type { Barber } from "../../types";
+import bcrypt from "bcryptjs";
 
-/**
- * @interface BarberFormProps
- * @property {string | null} editId - El ID del barbero a editar. Si es nulo, el formulario es para crear un nuevo barbero.
- * @property {() => void} onFinished - Callback que se ejecuta cuando el formulario se cierra o la operación (crear/editar) ha terminado.
- */
 interface BarberFormProps {
-  editId: string | null;
+  editId?: string;
   onFinished: () => void;
 }
 
-/**
- * Componente BarberForm
- * 
- * Formulario para crear o editar un barbero.
- * Utiliza el contexto de barberos para añadir o actualizar la información.
- * 
- * @param {BarberFormProps} props - Propiedades del componente.
- * @returns {React.FC}
- */
-const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
-  // Hook para acceder al contexto de los barberos
+export const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
   const { barbers, addBarber, updateBarber } = useBarbers();
 
-  // Estado para el formulario del barbero
-  const [form, setForm] = useState<Omit<Barber, "id">>({
+  // Estado para los campos del formulario de barbero (sin la contraseña)
+  const [form, setForm] = useState<Omit<Barber, "id" | "password">>({
     name: "",
+    email: "",
     specialty: "",
     experience: "",
     image: "",
     rating: 0,
     phone: "",
   });
-
-  // Estado para controlar la carga durante el envío del formulario
+  // Estado para la contraseña (solo se usa al crear un nuevo barbero)
+  const [password, setPassword] = useState("");
+  // Estado para la confirmación de contraseña
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  /**
-   * useEffect para cargar los datos del barbero cuando se edita.
-   * Se ejecuta cuando `editId` o `barbers` cambian.
-   */
   useEffect(() => {
     if (editId) {
       const barberToEdit = barbers.find((b) => b.id === editId);
       if (barberToEdit) {
-        setForm({
-          name: barberToEdit.name,
-          specialty: barberToEdit.specialty,
-          experience: barberToEdit.experience,
-          image: barberToEdit.image,
-          rating: barberToEdit.rating,
-          phone: barberToEdit.phone,
-        });
+        const { password, ...rest } = barberToEdit;
+        setForm(rest);
       }
+      setPassword(""); // Limpiar contraseña al editar
+      setConfirmPassword("");
     } else {
-      // Resetea el formulario si no hay un barbero para editar
       setForm({
         name: "",
+        email: "",
         specialty: "",
         experience: "",
         image: "",
@@ -71,112 +53,179 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
     }
   }, [editId, barbers]);
 
-  /**
-   * Maneja el envío del formulario.
-   * Previene el comportamiento por defecto, activa el estado de carga,
-   * y luego añade o actualiza un barbero.
-   * 
-   * @param {React.FormEvent} e - Evento del formulario.
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Simula un pequeño retraso para dar feedback visual
+    setError("");
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     if (editId) {
-      // Si hay un editId, actualiza el barbero existente
       updateBarber({ id: editId, ...form });
     } else {
-      // Si no, crea un nuevo barbero con un ID temporal
-      addBarber({ id: Date.now().toString(), ...form });
+      // Solo para la creación de un nuevo barbero, se requiere contraseña
+      if (!password || !confirmPassword) {
+        setError("Por favor, ingresa y confirma la contraseña.");
+        setIsLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Las contraseñas no coinciden.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Hashear la contraseña antes de guardarla
+      const hashedPassword = bcrypt.hashSync(password, 10);
+
+      addBarber({
+        ...form,
+        id: Date.now().toString(),
+        password: hashedPassword,
+      });
     }
-    
+
     setIsLoading(false);
-    onFinished(); // Llama al callback para cerrar el formulario
+    onFinished();
   };
 
-  /**
-   * Maneja la cancelación del formulario.
-   * Simplemente llama al callback `onFinished`.
-   */
   const handleCancel = () => {
     onFinished();
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Preview de la imagen del barbero */}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Preview de la imagen */}
       {form.image && (
         <div className="text-center">
           <img
             src={form.image}
-            alt="Preview del barbero"
-            className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-gray-200"
+            alt="Preview"
+            className="w-20 h-20 rounded-lg object-cover mx-auto border-2 border-gray-200"
             onError={(e) => {
-              // Oculta la imagen si hay un error al cargarla
               e.currentTarget.style.display = 'none';
             }}
           />
         </div>
       )}
 
-      {/* Campo: Nombre Completo */}
+      {/* Nombre */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <User size={16} />
-          Nombre Completo
+          Nombre del Barbero
         </label>
         <input
           type="text"
-          placeholder="Ej: Juan Pérez"
+          placeholder="Nombre completo"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent transition-all"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
           required
         />
       </div>
 
-      {/* Campo: Especialidad */}
+      {/* Email */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <Mail size={16} />
+          Correo Electrónico
+        </label>
+        <input
+          type="email"
+          placeholder="barbero@goodcut.com"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
+          required
+        />
+      </div>
+
+      {/* Contraseña (solo para nuevos barberos) */}
+      {!editId && (
+        <>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Lock size={16} />
+              Contraseña
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+              <Lock size={16} />
+              Confirmar Contraseña
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
+              required
+            />
+          </div>
+        </>
+      )}
+
+      {/* Especialidad */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Scissors size={16} />
           Especialidad
         </label>
-        <select
+        <input
+          type="text"
+          placeholder="Ej: Cortes clásicos, Barba"
           value={form.specialty}
           onChange={(e) => setForm({ ...form, specialty: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent transition-all"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
           required
-        >
-          <option value="">Selecciona una especialidad</option>
-          <option value="Corte Clásico">Corte Clásico</option>
-          <option value="Corte Moderno">Corte Moderno</option>
-          <option value="Barba y Bigote">Barba y Bigote</option>
-          <option value="Afeitado Tradicional">Afeitado Tradicional</option>
-          <option value="Corte y Barba">Corte y Barba</option>
-          <option value="Estilista Senior">Estilista Senior</option>
-        </select>
+        />
       </div>
 
-      {/* Campo: Años de Experiencia */}
+      {/* Experiencia */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Clock size={16} />
           Años de Experiencia
         </label>
         <input
-          type="text"
-          placeholder="Ej: 5 años"
+          type="number"
+          placeholder="5"
           value={form.experience}
           onChange={(e) => setForm({ ...form, experience: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent transition-all"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
           required
         />
       </div>
 
-      {/* Campo: Teléfono */}
+      {/* Rating */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <Star size={16} />
+          Calificación (1-5)
+        </label>
+        <input
+          type="number"
+          placeholder="4.5"
+          step="0.1"
+          min="1"
+          max="5"
+          value={form.rating}
+          onChange={(e) => setForm({ ...form, rating: parseFloat(e.target.value) })}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
+          required
+        />
+      </div>
+
+      {/* Teléfono */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Phone size={16} />
@@ -184,48 +233,15 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
         </label>
         <input
           type="tel"
-          placeholder="Ej: +1 234 567 8900"
+          placeholder="+57 300 123 4567"
           value={form.phone}
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent transition-all"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
           required
         />
       </div>
 
-      {/* Campo: Calificación */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-          <Star size={16} />
-          Calificación (1-5)
-        </label>
-        <div className="flex items-center gap-2">
-          <input
-            type="range"
-            min="1"
-            max="5"
-            step="0.1"
-            value={form.rating}
-            onChange={(e) => setForm({ ...form, rating: Number(e.target.value) })}
-            className="flex-1"
-          />
-          <span className="text-sm font-medium text-gray-600 w-8">
-            {form.rating.toFixed(1)}
-          </span>
-        </div>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Star
-              key={star}
-              size={16}
-              className={`${
-                star <= form.rating ? "text-yellow-400 fill-current" : "text-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Campo: URL de Imagen */}
+      {/* URL de Imagen */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Image size={16} />
@@ -233,15 +249,14 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
         </label>
         <input
           type="url"
-          placeholder="https://ejemplo.com/imagen.jpg"
+          placeholder="https://ejemplo.com/barbero.jpg"
           value={form.image}
           onChange={(e) => setForm({ ...form, image: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent transition-all"
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-golden focus:border-transparent"
         />
-        <p className="text-xs text-gray-500">
-          Ingresa la URL de una imagen para el barbero.
-        </p>
       </div>
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
       {/* Botones de Acción */}
       <div className="flex gap-3 pt-4">
@@ -256,7 +271,7 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
         <button
           type="submit"
           disabled={isLoading}
-          className="flex-1 flex items-center justify-center gap-2 bg-golden hover:bg-golden-dark text-dark font-semibold px-4 py-2 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 bg-golden hover:bg-golden-dark text-dark font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
             <>
@@ -266,7 +281,7 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
           ) : (
             <>
               <Save size={16} />
-              <span>{editId ? "Actualizar" : "Crear"} Barbero</span>
+              {editId ? "Actualizar Barbero" : "Crear Barbero"}
             </>
           )}
         </button>
@@ -274,5 +289,3 @@ const BarberForm: React.FC<BarberFormProps> = ({ editId, onFinished }) => {
     </form>
   );
 };
-
-export default BarberForm;

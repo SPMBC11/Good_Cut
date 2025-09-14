@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Plus, Users, Search, Filter } from "lucide-react";
 import { useBarbers } from "../../context/BarberContext";
-import BarberForm from "./BarberForm";
+import { BarberForm } from "./BarberForm";
 import BarberList from "./BarberList";
 import type { Barber } from "../../types";
 
@@ -176,7 +176,7 @@ const ManageBarbers: React.FC = () => {
             <div className="p-4">
               {showForm || editingId ? (
                 <BarberForm 
-                  editId={editingId} 
+                  editId={editingId ?? undefined} 
                   onFinished={handleFormFinished} 
                 />
               ) : (

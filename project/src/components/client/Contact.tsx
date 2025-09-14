@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
-import LoadingSpinner from './LoadingSpinner';
+import LoadingSpinner from '../ui/LoadingSpinner';
 import { useSettings } from '../../context/SettingsContext';
 
 const Contact: React.FC = () => {

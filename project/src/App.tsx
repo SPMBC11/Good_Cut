@@ -2,28 +2,42 @@
 
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import LoadingSpinner from "./components/client/LoadingSpinner";
+import LoadingSpinner from "./components/ui/LoadingSpinner";
 import Home from "./components/client/Home";
-import Login from "./components/admin/Login";
+import Login from "./components/ui/Login";
 import NotFound from "./components/client/NotFound";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import { BarberProvider } from "./context/BarberContext";
 import { ServiceProvider } from "./context/ServiceContext";
 import { SettingsProvider } from "./context/SettingsContext"; // Importar SettingsProvider
+import BarberLayout from "./components/barber/BarberLayout";
+import BarberDashboard from "./components/barber/BarberDashboard";
+import BarberAgenda from "./components/barber/BarberAgenda";
+import BarberProfile from "./components/barber/BarberProfile";
+import SettingsPage from "./components/barber/SettingsPage";
 
 /**
- * @component PrivateRoute
+ * @component AdminPrivateRoute
  * 
- * Componente de orden superior para proteger rutas.
+ * Componente de orden superior para proteger rutas de administrador.
  * Verifica si el usuario es administrador (`isAdmin` en `localStorage`).
  * Si no es administrador, redirige a la página de login.
- * 
- * @param {{ children: React.ReactElement }} props - Propiedades del componente, `children` es el componente a renderizar si la ruta es privada.
- * @returns {React.ReactElement} El componente hijo o una redirección.
  */
-function PrivateRoute({ children }: { children: React.ReactElement }) {
+function AdminPrivateRoute({ children }: { children: React.ReactElement }) {
   const isAdmin = localStorage.getItem("isAdmin") === "true";
   return isAdmin ? children : <Navigate to="/login" replace />;
+}
+
+/**
+ * @component BarberPrivateRoute
+ * 
+ * Componente de orden superior para proteger rutas de barbero.
+ * Verifica si el usuario es barbero (`isBarber` en `localStorage`).
+ * Si no es barbero, redirige a la página de login.
+ */
+function BarberPrivateRoute({ children }: { children: React.ReactElement }) {
+  const isBarber = localStorage.getItem("isBarber") === "true";
+  return isBarber ? children : <Navigate to="/login" replace />;
 }
 
 /**
@@ -53,29 +67,45 @@ function App() {
   }
 
   // Renderiza la aplicación principal una vez que la carga ha terminado
-  return (
+return (
     <BarberProvider>
       <ServiceProvider>
-        <SettingsProvider> {/* Envuelve AdminDashboard con SettingsProvider */}
+        <SettingsProvider>
           <BrowserRouter>
             <Routes>
-              {/* Ruta principal de la aplicación */}
+              {/* Ruta principal (cliente) */}
               <Route path="/" element={<Home />} />
 
-              {/* Ruta para el inicio de sesión de administradores */}
+              {/* Login */}
               <Route path="/login" element={<Login />} />
 
-              {/* Ruta protegida para el panel de administración */}
-              <Route 
+              {/* Admin */}
+              <Route
                 path="/admin"
                 element={
-                  <PrivateRoute>
+                  <AdminPrivateRoute>
                     <AdminDashboard />
-                  </PrivateRoute>
+                  </AdminPrivateRoute>
                 }
               />
 
-              {/* Ruta para páginas no encontradas (404) */}
+              {/* Barber */}
+              <Route
+                path="/barber"
+                element={
+                  <BarberPrivateRoute>
+                    <BarberLayout />
+                  </BarberPrivateRoute>
+                }
+              >
+                <Route path="dashboard" element={<BarberDashboard />} />
+                <Route path="agenda" element={<BarberAgenda />} />
+                <Route path="profile" element={<BarberProfile />} />
+                <Route path="reports" element={<div>Reportes</div>} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+
+              {/* 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

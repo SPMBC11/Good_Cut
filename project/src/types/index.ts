@@ -14,6 +14,8 @@
 export interface Barber {
   id: string; // Identificador único
   name: string; // Nombre completo
+  email: string; // Correo electrónico
+  password?: string; // Contraseña (opcional para no exponerla siempre)
   specialty: string; // Especialidad principal (ej. "Corte Clásico")
   experience: string; // Años de experiencia
   image: string; // URL de la imagen de perfil
